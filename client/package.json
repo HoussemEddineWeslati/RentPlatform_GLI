@@ -1,5 +1,5 @@
 {
-  "name": "gli-client",
+  "name": "gli-client", 
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000 --host 0.0.0.0",

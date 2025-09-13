@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
@@ -57,14 +58,16 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // For separate client-server setup, only serve static files in production
-  // In development, run server as API-only (no Vite integration)
-  if (app.get("env") === "development" && !process.env.API_ONLY) {
+  // For separate client-server setup, default to API-only mode
+  // Check if we should serve frontend (only when explicitly requested)
+  const shouldServeVite = process.env.SERVE_FRONTEND === "true";
+  
+  if (app.get("env") === "development" && shouldServeVite) {
     await setupVite(app, server);
   } else if (app.get("env") === "production") {
     serveStatic(app);
   }
-  // If API_ONLY=true, server runs as pure API without serving frontend
+  // Default: server runs as pure API without serving frontend
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
