@@ -11,15 +11,21 @@ declare module "express-session" {
   }
 }
 
+// Require SESSION_SECRET in production
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret && process.env.NODE_ENV === "production") {
+  throw new Error("SESSION_SECRET environment variable is required in production");
+}
+
 export const sessionConfig = {
   store: new sessionStore({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
-  secret: process.env.SESSION_SECRET || "your-secret-key",
+  secret: sessionSecret || "dev-only-fallback-secret",
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Set to true in production with HTTPS
+    secure: process.env.NODE_ENV === "production",
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
