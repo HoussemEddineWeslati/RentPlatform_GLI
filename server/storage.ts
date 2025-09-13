@@ -11,7 +11,7 @@ import {
   properties,
   tenants,
   quotes,
-} from "@shared/schema";
+} from "./schema.js";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 

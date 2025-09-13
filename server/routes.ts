@@ -8,7 +8,7 @@ import {
   insertTenantSchema,
   insertQuoteSchema,
  
-} from "@shared/schema";
+} from "./schema.js";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import MemoryStore from "memorystore";
