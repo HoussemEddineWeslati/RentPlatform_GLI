@@ -61,11 +61,22 @@ export const insertPropertySchema = createInsertSchema(properties).omit({
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Override date fields to accept strings and coerce them to dates
+  leaseStart: z.coerce.date(),
+  leaseEnd: z.coerce.date(),
+  lastPaymentDate: z.coerce.date().optional(),
+  // Ensure rentAmount accepts strings (client sends strings)
+  rentAmount: z.string().or(z.number()).transform((val) => typeof val === 'string' ? val : val.toString()),
 });
 
 export const insertQuoteSchema = createInsertSchema(quotes).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Ensure decimal fields accept strings (client sends strings)
+  rentAmount: z.string().or(z.number()).transform((val) => typeof val === 'string' ? val : val.toString()),
+  monthlyPremium: z.string().or(z.number()).transform((val) => typeof val === 'string' ? val : val.toString()),
 });
 
 

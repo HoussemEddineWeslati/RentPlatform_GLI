@@ -14,11 +14,9 @@ export const getTenants = async (req: any, res: Response) => {
 
 export const createTenant = async (req: any, res: Response) => {
   try {
-    // Convert date strings to Date objects before validation
+    // Add userId and let schema handle date coercion
     const processedBody = {
       ...req.body,
-      leaseStart: new Date(req.body.leaseStart),
-      leaseEnd: new Date(req.body.leaseEnd),
       userId: req.session.userId
     };
     
