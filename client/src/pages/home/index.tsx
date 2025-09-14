@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Users, Calculator, BarChart3, Check, CheckCircle } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { useAuth } from "@/hooks/use-auth";
-import cityscapeWallpaper from "@assets/generated_images/Dark_cityscape_wallpaper_background_aa84b263.png";
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
@@ -16,12 +15,6 @@ export default function Home() {
       {/* Hero Section */}
       <div 
         className="relative bg-gradient-to-br from-primary/90 via-blue-600/90 to-blue-700/90 text-white min-h-screen"
-        style={{
-          backgroundImage: `url(${cityscapeWallpaper})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
       >
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-blue-600/80 to-blue-700/80"></div>
