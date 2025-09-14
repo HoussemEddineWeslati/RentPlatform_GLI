@@ -42,5 +42,8 @@
     "ws": "^8.18.0",
     "zod": "^3.24.2",
     "zod-validation-error": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.16.11"
   }
 }
