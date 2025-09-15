@@ -8,6 +8,7 @@ import * as authController from "../controllers/authController.js";
 import * as propertyController from "../controllers/propertyController.js";
 import * as tenantController from "../controllers/tenantController.js";
 import * as quoteController from "../controllers/quoteController.js";
+import * as riskController from "../controllers/riskController.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware (use the middleware exported from config/session)
@@ -35,6 +36,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quote routes
   app.get("/api/quotes", requireAuth, quoteController.getQuotes);
   app.post("/api/quotes", requireAuth, quoteController.createQuote);
+
+  app.post("/api/risk/calculate", requireAuth, riskController.calculateRisk);
 
   const httpServer = createServer(app);
   return httpServer;
