@@ -116,7 +116,7 @@ export function Sidebar() {
   const navigation: { name: string; href: string; icon: React.ElementType }[] = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { name: "Landlords", href: "/landlords", icon: UserSquare }, // New Landlords link
-    { name: "Quote Calculator", href: "/quote", icon: Calculator },
+    { name: "Risk Calculator", href: "/quote", icon: Calculator },
   ];
 
   return (

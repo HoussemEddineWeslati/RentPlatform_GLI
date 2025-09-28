@@ -1,7 +1,13 @@
 // client/src/types/risk.ts
 export type GuarantorLocation = "Tunisia" | "Outside" | "Unknown";
 export type MaritalStatus = "Single" | "Married" | "Divorced" | "Widowed";
-export type EmploymentType = "Permanent" | "Contract" | "Self_employed" | "Student" | "Unemployed" | "Retired";
+export type EmploymentType =
+  | "Permanent"
+  | "Contract"
+  | "Self_employed"
+  | "Student"
+  | "Unemployed"
+  | "Retired";
 export type UtilityPaymentHistory = "Always" | "Sometimes" | "Frequently";
 export type HealthStatus = "Good" | "Average" | "Poor";
 
@@ -18,15 +24,12 @@ export type RiskRequest = {
   age?: number;
   maritalStatus?: MaritalStatus;
   numberOfDependents?: number;
-
   employmentType?: EmploymentType;
   monthlyNetSalary?: number;
   employmentYears?: number;
-
   monthlyDebtPayments?: number;
   savingsBalance?: number;
   otherObligations?: number;
-
   rentAmount?: number;
   hasGuarantor?: boolean;
   guarantorIncome?: number | null;
@@ -34,11 +37,21 @@ export type RiskRequest = {
   monthsAtResidence?: number;
   numberOfPastDefaults?: number;
   landlordReferences?: LandlordReference[];
-
   utilityPaymentHistory?: UtilityPaymentHistory;
   healthStatus?: HealthStatus;
   verifiedId?: boolean;
   nationalId?: string | undefined;
+};
+
+export type RiskReportRequest = RiskRequest & {
+  tenantEmail?: string;
+  tenantPhone?: string;
+  propertyAddress?: string;
+  propertyCity?: string;
+  propertyType?: string;
+  propertyStatus?: string;
+  leaseStartDate?: string; // ISO date
+  leaseEndDate?: string; // ISO date
 };
 
 export type RiskResponse = {

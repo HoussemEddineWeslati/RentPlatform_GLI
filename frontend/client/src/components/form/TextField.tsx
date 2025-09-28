@@ -6,15 +6,28 @@ type Props = {
   label: string;
   id: string;
   register?: any;
-  error?: string | undefined;
+  error?: string;
   placeholder?: string;
+  type?: string; // 👈 new, default to "text"
 };
 
-export default function TextField({ label, id, register, error, placeholder }: Props) {
+export default function TextField({
+  label,
+  id,
+  register,
+  error,
+  placeholder,
+  type = "text",
+}: Props) {
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type="text" placeholder={placeholder} {...(register ? register(id) : {})} />
+      <Input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        {...(register ? register(id) : {})}
+      />
       {error && <p className="text-sm text-destructive mt-1">{error}</p>}
     </div>
   );

@@ -1,3 +1,4 @@
+// client/src/pages/quote/index.tsx
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,9 +12,18 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useRisk } from "@/hooks/useRisk";
+import { downloadRiskReport } from "@/hooks/useRiskReport";
 import { riskFormSchema, type RiskFormData } from "@/types/schema/riskSchema";
-import type { RiskRequest } from "@/types/risk";
-import { ArrowLeft, ArrowRight, Calculator } from "lucide-react";
+import type { RiskReportRequest, RiskResponse } from "@/types/risk";
+import { ArrowLeft, ArrowRight, Calculator, FileDown } from "lucide-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 const SECTION_TITLES = [
   "Personal Info",
@@ -50,10 +60,18 @@ export default function Quote() {
       healthStatus: "Good",
       verifiedId: false,
       nationalId: "",
+      tenantEmail: "",
+      tenantPhone: "",
+      propertyAddress: "",
+      propertyCity: "",
+      propertyType: "",
+      propertyStatus: "",
+      leaseStartDate: "",
+      leaseEndDate: "",
     },
   });
 
-  const [result, setResult] = React.useState<null | import("@/types/risk").RiskResponse>(null);
+  const [result, setResult] = React.useState<null | RiskResponse>(null);
   const [step, setStep] = React.useState<number>(-1); // -1 = landing, 0..4 = sections
 
   const employmentOptions = [
@@ -75,29 +93,7 @@ export default function Quote() {
   };
 
   const onSubmit = (data: RiskFormData) => {
-    const payload: RiskRequest = {
-      fullName: data.fullName,
-      age: data.age,
-      maritalStatus: data.maritalStatus,
-      numberOfDependents: data.numberOfDependents,
-      employmentType: data.employmentType,
-      monthlyNetSalary: data.monthlyNetSalary,
-      employmentYears: data.employmentYears,
-      monthlyDebtPayments: data.monthlyDebtPayments,
-      savingsBalance: data.savingsBalance,
-      otherObligations: data.otherObligations,
-      rentAmount: data.rentAmount,
-      hasGuarantor: data.hasGuarantor,
-      guarantorIncome: data.hasGuarantor ? data.guarantorIncome ?? null : null,
-      guarantorLocation: data.guarantorLocation,
-      monthsAtResidence: data.monthsAtResidence,
-      numberOfPastDefaults: data.numberOfPastDefaults,
-      landlordReferences: data.landlordReferences,
-      utilityPaymentHistory: data.utilityPaymentHistory,
-      healthStatus: data.healthStatus,
-      verifiedId: data.verifiedId,
-      nationalId: data.nationalId,
-    };
+    const payload: RiskReportRequest = { ...data };
 
     riskMutation.mutate(payload, {
       onSuccess: (res) => setResult(res.risk),
@@ -112,7 +108,6 @@ export default function Quote() {
           <CollapsibleCard
             title="Section 1 — Personal Info"
             subtitle="Identification and basic demographic"
-            
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TextField
@@ -154,6 +149,18 @@ export default function Quote() {
                 min={0}
                 max={10}
               />
+              <TextField
+                label="Tenant Email"
+                id="tenantEmail"
+                register={form.register}
+                error={form.formState.errors.tenantEmail?.message}
+              />
+              <TextField
+                label="Tenant Phone"
+                id="tenantPhone"
+                register={form.register}
+                error={form.formState.errors.tenantPhone?.message}
+              />
             </div>
           </CollapsibleCard>
         );
@@ -168,7 +175,12 @@ export default function Quote() {
                 name="employmentType"
                 control={form.control}
                 render={({ field: { value, onChange } }) => (
-                  <SelectField label="Employment Type" options={employmentOptions} value={value} onChange={onChange} />
+                  <SelectField
+                    label="Employment Type"
+                    options={employmentOptions}
+                    value={value}
+                    onChange={onChange}
+                  />
                 )}
               />
               <NumberField
@@ -232,7 +244,12 @@ export default function Quote() {
                 name="hasGuarantor"
                 control={form.control}
                 render={({ field: { value, onChange } }) => (
-                  <ToggleField label="Has Guarantor?" id="hasGuarantor" checked={value} onChange={onChange} />
+                  <ToggleField
+                    label="Has Guarantor?"
+                    id="hasGuarantor"
+                    checked={value}
+                    onChange={onChange}
+                  />
                 )}
               />
               {form.watch("hasGuarantor") && (
@@ -273,34 +290,73 @@ export default function Quote() {
                 register={form.register}
                 error={form.formState.errors.numberOfPastDefaults?.message}
               />
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">
-                  Landlord References (one per line: name | phone | rating)
-                </label>
-                <textarea
-                  placeholder="Example: Ahmed | +216-xx-xxx-xxx | Positive"
-                  className="w-full rounded-md border p-2"
-                  rows={3}
-                  onBlur={(e) => {
-                    const raw = e.currentTarget.value;
-                    const lines = raw.split("\n").map((l) => l.trim()).filter(Boolean);
-                    const parsed = lines.map((l, idx) => {
-                      const parts = l.split("|").map((p) => p.trim());
-                      return {
-                        id: `lr-${idx}`,
-                        name: parts[0] ?? "",
-                        phone: parts[1] ?? "",
-                        relation: "previous landlord",
-                        rating: (parts[2] ?? "Neutral") as any,
-                      };
-                    });
-                    form.setValue("landlordReferences", parsed);
-                  }}
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Use one line per landlord. Format: name | phone | rating (Positive/Neutral/Negative)
+              <TextField
+                label="Property Address"
+                id="propertyAddress"
+                register={form.register}
+              />
+              <TextField
+                label="City"
+                id="propertyCity"
+                register={form.register}
+              />
+              <div>
+              <Label htmlFor="propertyType">Property Type</Label>
+              <Select
+                onValueChange={(v) => form.setValue("propertyType", v)}
+                defaultValue={form.getValues("propertyType")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="villa">Villa</SelectItem>
+                  <SelectItem value="apartment">Apartment</SelectItem>
+                  <SelectItem value="house">House</SelectItem>
+                  <SelectItem value="studio">Studio</SelectItem>
+                </SelectContent>
+              </Select>
+              {form.formState.errors.propertyType && (
+                <p className="text-sm text-destructive mt-1">
+                  {form.formState.errors.propertyType.message}
                 </p>
-              </div>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="propertyStatus">Property Status</Label>
+              <Select
+                onValueChange={(v) => form.setValue("propertyStatus", v)}
+                defaultValue={form.getValues("propertyStatus")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="available">Available</SelectItem>
+                  <SelectItem value="rented">Rented</SelectItem>
+                  <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
+              {form.formState.errors.propertyStatus && (
+                <p className="text-sm text-destructive mt-1">
+                  {form.formState.errors.propertyStatus.message}
+                </p>
+              )}
+            </div>
+
+              <TextField
+                label="Lease Start Date"
+                id="leaseStartDate"
+                type="date"
+                register={form.register}
+              />
+              <TextField
+                label="Lease End Date"
+                id="leaseEndDate"
+                type="date"
+                register={form.register}
+              />
             </div>
           </CollapsibleCard>
         );
@@ -347,7 +403,12 @@ export default function Quote() {
                 name="verifiedId"
                 control={form.control}
                 render={({ field: { value, onChange } }) => (
-                  <ToggleField label="National ID verified" id="verifiedId" checked={value} onChange={onChange} />
+                  <ToggleField
+                    label="National ID verified"
+                    id="verifiedId"
+                    checked={value}
+                    onChange={onChange}
+                  />
                 )}
               />
               <TextField
@@ -373,10 +434,13 @@ export default function Quote() {
           {/* Landing page */}
           {step === -1 && (
             <div className="text-center animate-fade-in">
-              <h1 className="text-4xl font-bold text-foreground mb-4">Tenant / Applicant Credit Scoring</h1>
+              <h1 className="text-4xl font-bold text-foreground mb-4">
+                Tenant / Applicant Credit Scoring
+              </h1>
               <p className="text-lg text-muted-foreground mb-8">
-                Welcome to RentGuardPro! Click below to start your advanced, interactive quote. 
-                You'll fill out 5 quick sections, see your progress, and get instant results.
+                Welcome to RentGuardPro! Click below to start your advanced,
+                interactive quote. You'll fill out 5 quick sections, see your
+                progress, and get instant results.
               </p>
               <Button size="lg" onClick={handleStart}>
                 Start Quote
@@ -388,9 +452,13 @@ export default function Quote() {
           {step >= 0 && step <= 4 && (
             <div className="animate-fade-in">
               <div className="flex items-center justify-between mb-6">
-                <span className="font-bold text-xl">{SECTION_TITLES[step]}</span>
+                <span className="font-bold text-xl">
+                  {SECTION_TITLES[step]}
+                </span>
                 <Progress value={progressValue} className="w-1/2" />
-                <span className="text-sm text-muted-foreground">{step + 1} / {SECTION_TITLES.length}</span>
+                <span className="text-sm text-muted-foreground">
+                  {step + 1} / {SECTION_TITLES.length}
+                </span>
               </div>
               {renderSection()}
               <div className="flex justify-between mt-8">
@@ -408,7 +476,13 @@ export default function Quote() {
                     onClick={form.handleSubmit(onSubmit)}
                     disabled={riskMutation.isPending}
                   >
-                    {riskMutation.isPending ? "Calculating…" : <>Calculate <Calculator className="ml-2" /></>}
+                    {riskMutation.isPending ? (
+                      "Calculating…"
+                    ) : (
+                      <>
+                        Calculate <Calculator className="ml-2" />
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
@@ -419,9 +493,18 @@ export default function Quote() {
           {result && (
             <div className="animate-fade-in mt-8">
               <RiskResultCard result={result} />
-              <div className="flex justify-center mt-6">
+              <div className="flex justify-center mt-6 gap-4">
                 <Button variant="outline" onClick={handleRestart}>
                   Start New Quote
+                </Button>
+                <Button
+                  onClick={() =>
+                    downloadRiskReport(form.getValues(), result).catch((e) =>
+                      alert("Failed to download PDF: " + e.message)
+                    )
+                  }
+                >
+                  Download PDF <FileDown className="ml-2" />
                 </Button>
               </div>
             </div>
@@ -434,8 +517,9 @@ export default function Quote() {
             <div className="p-4">
               <h3 className="font-medium">Guidance</h3>
               <p className="text-sm text-muted-foreground mt-2">
-                Tips: Improve safety score by increasing savings, reducing debt, providing stronger landlord
-                references or a guarantor located in Tunisia.
+                Tips: Improve safety score by increasing savings, reducing debt,
+                providing stronger landlord references or a guarantor located in
+                Tunisia.
               </p>
             </div>
           </Card>
