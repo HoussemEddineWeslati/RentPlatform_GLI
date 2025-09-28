@@ -1,26 +1,30 @@
-import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
+// export default App;
+
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Sidebar } from "@/components/sidebar";
+import { queryClient } from "./lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import Dashboard from "@/pages/dashboard";
-import Properties from "@/pages/properties";
-import Tenants from "@/pages/tenants";
 import Quote from "@/pages/quote";
+import NotFound from "@/pages/not-found";
+import { Navbar } from "@/components/navbar";
+import { Sidebar } from "@/components/sidebar";
 
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [currentPath] = useLocation();
-  
-  const isHomePage = currentPath === "/";
-  // const showSidebar = !isHomePage && (isAuthenticated || ["/login", "/signup"].includes(currentPath));
-  const showSidebar = !isHomePage && isAuthenticated;
+// Page Imports
+import LandlordsPage from "@/pages/landlords/index";
+import LandlordDetailPage from "@/pages/landlords/[id]/index";
+import LandlordPropertiesPage from "@/pages/landlords/[id]/properties";
+import LandlordTenantsPage from "@/pages/landlords/[id]/tenants";
+import PropertyDetailPage from "@/pages/landlords/[id]/properties/[propertyId]"; // Import the new page
+
+function AppRoutes() {
+  const { isLoading, isAuthenticated } = useAuth();
+  const showSidebar = isAuthenticated;
 
   return (
     <>
@@ -40,8 +44,15 @@ function Router() {
               {isAuthenticated ? (
                 <>
                   <Route path="/dashboard" component={Dashboard} />
-                  <Route path="/properties" component={Properties} />
-                  <Route path="/tenants" component={Tenants} />
+                  {/* Landlord Routes */}
+                  <Route path="/landlords" component={LandlordsPage} />
+                  <Route path="/landlords/:id" component={LandlordDetailPage} />
+                  <Route path="/landlords/:id/properties" component={LandlordPropertiesPage} />
+                  <Route path="/landlords/:id/tenants" component={LandlordTenantsPage} />
+                  
+                  {/* ADDED: New nested route for a specific property's details and tenants */}
+                  <Route path="/landlords/:id/properties/:propertyId" component={PropertyDetailPage} />
+
                   <Route path="/quote" component={Quote} />
                 </>
               ) : (
@@ -64,7 +75,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <Navbar />
+        <AppRoutes />
       </TooltipProvider>
     </QueryClientProvider>
   );

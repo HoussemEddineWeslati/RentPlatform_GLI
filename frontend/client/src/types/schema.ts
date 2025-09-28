@@ -1,39 +1,81 @@
+// Types
+export type User = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  createdAt?: Date;
+};
 import { z } from "zod";
-
-// User schemas and types
+// =================================================================================
+// USER SCHEMA
+// =================================================================================
 export const insertUserSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string(),
 });
 
-// Property schemas and types
+// =================================================================================
+// LANDLORD SCHEMA
+// =================================================================================
+export const insertLandlordSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(8, "Please enter a valid phone number"),
+  userId: z.string().uuid(),
+  propertyCount: z.number().int().optional().default(0),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
+export type Landlord = z.infer<typeof insertLandlordSchema>;
+
+// =================================================================================
+// PROPERTY SCHEMA
+// =================================================================================
 export const insertPropertySchema = z.object({
-  userId: z.string(),
-  name: z.string().min(1),
-  address: z.string().min(1),
-  type: z.string().min(1),
+  id: z.string().uuid().optional(),
+  name: z.string().min(3, "Property name is required"),
+  address: z.string().min(5, "Address is required"),
+  city: z.string().min(2, "City is required"),
+  rentAmount: z.coerce.number().positive("Rent must be a positive number"),
+  type: z.enum(["villa", "apartment", "house", "studio"]),
+  status: z.enum(["available", "rented", "under_maintenance"]),
+  maxTenants: z.coerce.number().int().min(1, "Must allow at least one tenant"),
   description: z.string().optional(),
+  landlordId: z.string().uuid("A landlord must be selected"),
+  assignedTenants: z.number().int().optional().default(0),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 });
 
-// Tenant schemas and types
+export type Property = z.infer<typeof insertPropertySchema>;
+
+// =================================================================================
+// TENANT SCHEMA
+// =================================================================================
 export const insertTenantSchema = z.object({
-  userId: z.string(),
-  propertyId: z.string(),
-  name: z.string().min(1),
-  email: z.string().email(),
-  rentAmount: z.string(),
-  paymentStatus: z.string().default("pending"),
-  leaseStart: z.string(),
-  leaseEnd: z.string(),
-  lastPaymentDate: z.string().optional(),
+  id: z.string().uuid().optional(),
+  name: z.string().min(2, "Name is required"),
+  email: z.string().email("Invalid email format"),
+  rentAmount: z.coerce.number().positive("Rent must be a positive number"),
+  paymentStatus: z.enum(["paid", "pending", "overdue"]),
+  leaseStart: z.string().datetime("Invalid lease start date"),
+  leaseEnd: z.string().datetime("Invalid lease end date"),
+  propertyId: z.string().uuid("A property must be selected"),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 });
+
+export type Tenant = z.infer<typeof insertTenantSchema>;
 
 // Quote schemas and types
 export const insertQuoteSchema = z.object({
@@ -44,46 +86,6 @@ export const insertQuoteSchema = z.object({
   monthlyPremium: z.string(),
 });
 
-// Types
-export type User = {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  createdAt?: Date;
-};
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type LoginCredentials = z.infer<typeof loginSchema>;
-
-export type Property = {
-  id: string;
-  userId: string;
-  name: string;
-  address: string;
-  type: string;
-  description?: string;
-  createdAt?: Date;
-};
-
-export type InsertProperty = z.infer<typeof insertPropertySchema>;
-
-export type Tenant = {
-  id: string;
-  userId: string;
-  propertyId: string;
-  name: string;
-  email: string;
-  rentAmount: string;
-  paymentStatus: string;
-  leaseStart: Date;
-  leaseEnd: Date;
-  lastPaymentDate?: Date;
-  createdAt?: Date;
-};
-
-export type InsertTenant = z.infer<typeof insertTenantSchema>;
-
 export type Quote = {
   id: string;
   userId: string;
@@ -93,5 +95,4 @@ export type Quote = {
   monthlyPremium: string;
   createdAt?: Date;
 };
-
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;

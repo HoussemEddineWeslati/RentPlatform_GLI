@@ -268,7 +268,7 @@ export default function Quote() {
                 error={form.formState.errors.monthsAtResidence?.message}
               />
               <NumberField
-                label="Past Rental Defaults"
+                label="Number Of Past Rental Defaults"
                 id="numberOfPastDefaults"
                 register={form.register}
                 error={form.formState.errors.numberOfPastDefaults?.message}

@@ -1,8 +1,19 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, timestamp, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  varchar,
+  integer,
+  decimal,
+  timestamp,
+  boolean,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+/**
+ * Users table (unchanged)
+ */
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").notNull().unique(),
@@ -12,16 +23,45 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const properties = pgTable("properties", {
+/**
+ * New: Landlords table
+ * Each landlord belongs to a user (the insurer) via userId
+ */
+export const landlords = pgTable("landlords", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   name: varchar("name").notNull(),
-  address: varchar("address").notNull(),
-  type: varchar("type").notNull(), // apartment, house, studio
-  description: text("description"),
+  email: varchar("email").notNull(),
+  phone: varchar("phone").notNull(),
+  propertyCount: integer("property_count").notNull().default(0), // <-- add this line
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+/**
+ * Properties table — updated to include landlordId, city, rentAmount, status
+ * We keep userId for backwards compatibility (insurer scope)
+ */
+export const properties = pgTable("properties", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  landlordId: varchar("landlord_id").notNull().references(() => landlords.id),
+  name: varchar("name").notNull(),
+  address: varchar("address").notNull(),
+  city: varchar("city").notNull().default("Unknown"),
+  rentAmount: decimal("rent_amount", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  type: varchar("type").notNull(), // apartment, house, studio
+  status: varchar("status").notNull().default("available"), // available, rented, maintenance
+  maxTenants: integer("max_tenants").notNull().default(1),
+  currentTenants: integer("current_tenants").notNull().default(0),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+/**
+ * Tenants table (unchanged fields) — references property
+ */
 export const tenants = pgTable("tenants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -36,6 +76,9 @@ export const tenants = pgTable("tenants", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+/**
+ * Quotes (unchanged)
+ */
 export const quotes = pgTable("quotes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -46,16 +89,33 @@ export const quotes = pgTable("quotes", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-
-// Insert schemas
+/**
+ * Insert schemas (zod + drizzle-zod helpers)
+ */
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
 });
 
+export const insertLandlordSchema = createInsertSchema(landlords).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  propertyCount: true, // propertyCount is managed automatically
+});
+
+// Validation: restrict status to allowed values
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+}).extend({
+  rentAmount: z.union([z.string(), z.number()]).transform(val =>
+    typeof val === "string" ? parseFloat(val) : val
+  ),
+  status: z.enum(["available", "rented", "maintenance"]),
+  maxTenants: z.coerce.number().int().min(1).default(1),
+  currentTenants: z.coerce.number().int().min(0).default(0),
 });
 
 export const insertTenantSchema = createInsertSchema(tenants).omit({
@@ -82,17 +142,21 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
   ),
 });
 
-
-
-// Login schema
+/**
+ * Login schema
+ */
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
-// Types
+/**
+ * Export types
+ */
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type Landlord = typeof landlords.$inferSelect;
+export type InsertLandlord = z.infer<typeof insertLandlordSchema>;
 export type Property = typeof properties.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 export type Tenant = typeof tenants.$inferSelect;

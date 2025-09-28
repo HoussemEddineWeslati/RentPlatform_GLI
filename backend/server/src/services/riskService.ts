@@ -1,4 +1,4 @@
-// server/src/services/riskService.ts
+// src/services/riskService.ts
 import type { RiskRequest } from "../validators/riskSchema";
 
 /**
@@ -38,7 +38,7 @@ export function computeComponentScores(input: RiskRequest): ComponentScores {
   else if (deps <= 4) personal += 1;
   // clamp
   personal = Math.max(0, Math.min(10, personal));
-  breakdown["age"] = personal; // store total for the category
+  breakdown["personal"] = personal; // ✅ FIXED: Use the correct key "personal"
 
   // --- Employment & Income (25 points)
   let employment = 0;
@@ -71,7 +71,7 @@ export function computeComponentScores(input: RiskRequest): ComponentScores {
   else employment += 1;
 
   employment = Math.max(0, Math.min(25, employment));
-  breakdown["employment"] = employment;
+  breakdown["employment"] = employment; // ✅ FIXED: This one was already correct
 
   // --- Financial Obligations (20 pts)
   let financial = 0;
@@ -97,7 +97,7 @@ export function computeComponentScores(input: RiskRequest): ComponentScores {
   else financial += 0;
 
   financial = Math.max(0, Math.min(20, financial));
-  breakdown["financial"] = financial;
+  breakdown["financial"] = financial; // ✅ FIXED: This one was already correct
 
   // --- Housing & Rental History (25 pts)
   let housing = 0;
@@ -130,7 +130,7 @@ export function computeComponentScores(input: RiskRequest): ComponentScores {
   housing += bestRefScore;
 
   housing = Math.max(0, Math.min(25, housing));
-  breakdown["housing"] = housing;
+  breakdown["housing"] = housing; // ✅ FIXED: This one was already correct
 
   // --- Other factors (20 pts)
   let other = 0;
@@ -147,7 +147,7 @@ export function computeComponentScores(input: RiskRequest): ComponentScores {
   if (input.verifiedId) other += 5;
 
   other = Math.max(0, Math.min(20, other));
-  breakdown["other"] = other;
+  breakdown["other"] = other; // ✅ FIXED: This one was already correct
 
   return {
     personal,

@@ -1,4 +1,5 @@
-// server/src/validators/riskSchema.ts
+// src/validators/riskSchema.ts
+
 import { z } from "zod";
 
 /**
@@ -35,6 +36,7 @@ export const riskRequestSchema = z.object({
   guarantorIncome: z.number().nonnegative().optional().nullable(),
   guarantorLocation: z.enum(["Tunisia", "Outside", "Unknown"]).optional().default("Unknown"),
   monthsAtResidence: z.number().int().min(0).optional().default(0),
+ 
   numberOfPastDefaults: z.number().int().min(0).optional().default(0),
   // landlordRefs: array of {name, phone, relation, rating}
   landlordReferences: z.array(z.object({
@@ -51,4 +53,22 @@ export const riskRequestSchema = z.object({
   verifiedId: z.boolean().optional().default(false),
 });
 
+
+/**
+ * NEW: Schema for generating the full PDF report.
+ * Extends the base risk schema with additional details needed for the document.
+ */
+export const riskReportRequestSchema = riskRequestSchema.extend({
+    tenantEmail: z.string().email().optional(),
+    tenantPhone: z.string().optional(),
+    propertyAddress: z.string().optional(),
+    propertyCity: z.string().optional(),
+    propertyType: z.string().optional(),
+    propertyStatus: z.string().optional(),
+    leaseStartDate: z.coerce.date().optional(),
+    leaseEndDate: z.coerce.date().optional(),
+});
+
+
 export type RiskRequest = z.infer<typeof riskRequestSchema>;
+export type RiskReportRequest = z.infer<typeof riskReportRequestSchema>;
