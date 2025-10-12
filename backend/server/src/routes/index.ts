@@ -11,6 +11,7 @@ import * as tenantController from "../controllers/tenantController.js";
 import * as quoteController from "../controllers/quoteController.js";
 import * as landlordController from "../controllers/landlordController.js";
 import * as riskController from "../controllers/riskController.js";
+import * as configController from "../controllers/configController.js"; // <-- 1. IMPORT CONFIG CONTROLLER
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware
@@ -50,10 +51,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/quotes", requireAuth, quoteController.getQuotes);
   app.post("/api/quotes", requireAuth, quoteController.createQuote);
 
-  // Risk route
+  // Risk routes
   app.post("/api/risk/calculate", requireAuth, riskController.calculateRisk);
-  // NEW: Add the PDF report generation route
   app.post("/api/risk/report", requireAuth, riskController.generateRiskReport);
+
+  // <-- 2. ADD CONFIG ROUTES HERE -->
+  // Scoring config routes
+  app.get("/api/config/score", requireAuth, configController.getScoringConfig);
+  app.patch("/api/config/score", requireAuth, configController.upsertScoringConfig);
 
   const httpServer = createServer(app);
   return httpServer;

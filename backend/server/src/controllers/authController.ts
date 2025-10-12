@@ -1,3 +1,4 @@
+//src/controllers/authController.ts
 import { Request, Response } from "express";
 import * as bcrypt from "bcrypt";
 import { storage } from "../database/storage.js";

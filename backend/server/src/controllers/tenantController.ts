@@ -1,3 +1,4 @@
+//src/controllers/tenantController.ts
 import type { Response } from "express";
 import type { AuthRequest } from "../types/custom.js";
 import { storage } from "../database/storage.js";

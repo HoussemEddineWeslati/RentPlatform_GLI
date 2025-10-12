@@ -1,3 +1,14 @@
+// src/components/navbar/index.tsx
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/api";
@@ -8,7 +19,7 @@ import { useState } from "react";
 import { Shield, Menu, X, LogOut } from "lucide-react";
 
 export function Navbar() {
-  const [, navigate] = useLocation(); // ignore location since we don't use it
+  const [, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -36,6 +47,11 @@ export function Navbar() {
   const handleLogout = () => logoutMutation.mutate();
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
+  const getUserInitials = () => {
+    if (!user) return "U";
+    return `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase();
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,24 +69,42 @@ export function Navbar() {
           <div className="hidden md:flex items-center space-x-6">
             {isAuthenticated ? (
               <>
-                <span className="text-sm text-muted-foreground">
-                  Welcome, {user?.firstName}
-                </span>
                 <Link href="/dashboard">
-                  <Button variant="outline" className="mr-2">
+                  <Button variant="outline">
                     Go to Dashboard
                   </Button>
                 </Link>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  disabled={logoutMutation.isPending}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {logoutMutation.isPending ? "Logging out..." : "Logout"}
-                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-10 w-10">
+                        {/* <AvatarImage src={user?.imageUrl} alt={user?.firstName} /> */}
+                        <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user?.firstName} {user?.lastName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <Link href="/settings">
+                      <DropdownMenuItem>
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Settings</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
+                       <LogOut className="h-4 w-4 mr-2" />
+                       {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>
@@ -117,6 +151,12 @@ export function Navbar() {
                     >
                       Go to Dashboard
                     </Button>
+                  </Link>
+                  <Link href="/settings" className="block">
+                     <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                     </Button>
                   </Link>
                   <Button
                     variant="ghost"

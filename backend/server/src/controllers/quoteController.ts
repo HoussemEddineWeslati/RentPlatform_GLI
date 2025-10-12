@@ -1,3 +1,4 @@
+//src/controllers/quoteController.ts
 import { Request, Response } from "express";
 import { storage } from "../database/storage.js";
 import { insertQuoteSchema } from "../database/schema.js";

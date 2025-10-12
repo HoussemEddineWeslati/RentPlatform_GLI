@@ -1,3 +1,4 @@
+//src\pages\landlords\[id]\properties.tsx :
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";

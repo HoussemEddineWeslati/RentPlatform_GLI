@@ -1,3 +1,4 @@
+//src/pages/home/index.tsx :
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

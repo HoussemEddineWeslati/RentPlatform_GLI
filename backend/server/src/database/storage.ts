@@ -1,4 +1,4 @@
-// export const storage = new DatabaseStorage();
+//src/database/storage.ts
 import {
   type User,
   type InsertUser,
@@ -18,6 +18,9 @@ import {
 } from "./schema.js";
 import { db } from "./connection.js";
 import { eq, sql } from "drizzle-orm";
+import { scoringConfigs } from "./schema.js";
+import { scoringConfigSchema, type ScoringConfig as ParsedScoringConfig } from "../validators/configSchema.js"; 
+
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
@@ -213,6 +216,64 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return quote;
   }
+  // Scoring config operations
+async getScoringConfig(userId: string): Promise<ParsedScoringConfig | undefined> {
+  const [row] = await db
+    .select()
+    .from(scoringConfigs)
+    .where(eq(scoringConfigs.userId, userId));
+
+  if (!row) return undefined;
+
+  try {
+    // Validate against Zod schema
+    return scoringConfigSchema.parse(JSON.parse(row.configJson));
+  } catch (e) {
+    console.error("Failed to parse scoring config JSON:", e);
+    return undefined;
+  }
 }
+
+/**
+ * Upsert scoring config for user. 
+ * If row exists => update updatedAt + configJson.
+ * Returns stored config (validated).
+ */
+async upsertScoringConfig(
+  userId: string, 
+  configObj: unknown
+): Promise<ParsedScoringConfig> {
+  // Validate first before persisting
+  const parsed = scoringConfigSchema.parse(configObj);
+  const configJson = JSON.stringify(parsed);
+
+  // Try update first
+  const [updated] = await db
+    .update(scoringConfigs)
+    .set({
+      configJson,
+      updatedAt: sql`now()`,
+    })
+    .where(eq(scoringConfigs.userId, userId))
+    .returning();
+
+  if (updated) {
+    return scoringConfigSchema.parse(JSON.parse(updated.configJson));
+  }
+
+  // Insert if no existing row
+  const [inserted] = await db
+    .insert(scoringConfigs)
+    .values({
+      userId,
+      configJson,
+    })
+    .returning();
+
+  return scoringConfigSchema.parse(JSON.parse(inserted.configJson));
+}
+}
+
+
 
 export const storage = new DatabaseStorage();

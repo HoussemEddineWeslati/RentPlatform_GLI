@@ -1,3 +1,4 @@
+//src/database/schema.ts
 import { sql } from "drizzle-orm";
 import {
   pgTable,
@@ -141,6 +142,22 @@ export const insertQuoteSchema = createInsertSchema(quotes).omit({
     typeof val === "string" ? parseFloat(val) : val
   ),
 });
+// add this block in src/database/schema.ts (with the other pgTable definitions)
+export const scoringConfigs = pgTable("scoring_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  // We'll store config JSON as text for portability; convert to/from JSON in code.
+  configJson: text("config_json").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// insert schema helper types if you use createInsertSchema (optional)
+export const insertScoringConfigSchema = createInsertSchema(scoringConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 /**
  * Login schema
@@ -164,3 +181,6 @@ export type InsertTenant = z.infer<typeof insertTenantSchema>;
 export type Quote = typeof quotes.$inferSelect;
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
+export type ScoringConfig = typeof scoringConfigs.$inferSelect;
+export type InsertScoringConfig = z.infer<typeof insertScoringConfigSchema>;
+

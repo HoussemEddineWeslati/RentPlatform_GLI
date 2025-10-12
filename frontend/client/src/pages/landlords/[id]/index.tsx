@@ -1,3 +1,4 @@
+//src\pages\landlords\[id]\index.tsx :
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRoute } from "wouter";
 import { apiRequest } from "@/lib/api";

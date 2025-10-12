@@ -1,3 +1,4 @@
+//src/types/custom.ts
 import type { Request } from "express";
 import type { Session, SessionData } from "express-session";
 
