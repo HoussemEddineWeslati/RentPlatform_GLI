@@ -1,4 +1,5 @@
-//src/database/schema.ts
+// src/database/schema.ts
+
 import { sql } from "drizzle-orm";
 import {
   pgTable,
@@ -8,12 +9,18 @@ import {
   decimal,
   timestamp,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 /**
- * Users table (unchanged)
+ * Users table (UPDATED)
+ * Checklist 1: Store OTPs in DB instead of session.
+ * - otpHash: Hashed OTP for security.
+ * - otpExpires: Expiration timestamp for the OTP.
+ * - otpAttempts: Track failed verification attempts for rate limiting.
+ * - lastOtpSentAt: Track timestamp to enforce resend cooldown.
  */
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -21,146 +28,226 @@ export const users = pgTable("users", {
   password: varchar("password").notNull(),
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  companyName: varchar("company_name"),
+  isVerified: boolean("is_verified").default(false).notNull(),
+
+  // Password Reset Fields
+  resetPasswordToken: varchar("reset_password_token"),
+  resetPasswordExpires: timestamp("reset_password_expires",{ withTimezone: true }),
+
+  // NEW: OTP & Email Verification Fields
+  otpHash: varchar("otp_hash"),
+  otpExpires: timestamp("otp_expires",{ withTimezone: true }),
+  otpAttempts: integer("otp_attempts").default(0).notNull(),
+  lastOtpSentAt: timestamp("last_otp_sent_at",{ withTimezone: true }),
+
+  createdAt: timestamp("created_at",{ withTimezone: true }).defaultNow(),
 });
 
-/**
- * New: Landlords table
- * Each landlord belongs to a user (the insurer) via userId
- */
 export const landlords = pgTable("landlords", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }), // Added onDelete cascade
   name: varchar("name").notNull(),
   email: varchar("email").notNull(),
   phone: varchar("phone").notNull(),
-  propertyCount: integer("property_count").notNull().default(0), // <-- add this line
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  propertyCount: integer("property_count").notNull().default(0),
+  createdAt: timestamp("created_at",{ withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at",{ withTimezone: true }).defaultNow(),
 });
-
-/**
- * Properties table — updated to include landlordId, city, rentAmount, status
- * We keep userId for backwards compatibility (insurer scope)
- */
 export const properties = pgTable("properties", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  landlordId: varchar("landlord_id").notNull().references(() => landlords.id),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  landlordId: varchar("landlord_id")
+    .notNull()
+    .references(() => landlords.id, { onDelete: "cascade" }),
   name: varchar("name").notNull(),
   address: varchar("address").notNull(),
   city: varchar("city").notNull().default("Unknown"),
-  rentAmount: decimal("rent_amount", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  rentAmount: decimal("rent_amount", { precision: 12, scale: 2 })
+    .notNull()
+    .default("0.00"),
   type: varchar("type").notNull(), // apartment, house, studio
   status: varchar("status").notNull().default("available"), // available, rented, maintenance
   maxTenants: integer("max_tenants").notNull().default(1),
   currentTenants: integer("current_tenants").notNull().default(0),
   description: text("description"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at",{ withTimezone: true }).defaultNow(),
+  
+updatedAt: timestamp("updated_at",{ withTimezone: true }).defaultNow(),
 });
-
-/**
- * Tenants table (unchanged fields) — references property
- */
 export const tenants = pgTable("tenants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  propertyId: varchar("property_id").notNull().references(() => properties.id),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  propertyId: varchar("property_id")
+    .notNull()
+    .references(() => properties.id, { onDelete: "cascade" }),
   name: varchar("name").notNull(),
   email: varchar("email").notNull(),
   rentAmount: decimal("rent_amount", { precision: 10, scale: 2 }).notNull(),
   paymentStatus: varchar("payment_status").notNull().default("pending"), // paid, pending, overdue
-  leaseStart: timestamp("lease_start").notNull(),
-  leaseEnd: timestamp("lease_end").notNull(),
-  lastPaymentDate: timestamp("last_payment_date"),
-  createdAt: timestamp("created_at").defaultNow(),
+  leaseStart: timestamp("lease_start",{ withTimezone: true }).notNull(),
+  leaseEnd: timestamp("lease_end",{ withTimezone: true }).notNull(),
+  lastPaymentDate: timestamp("last_payment_date",{ withTimezone: true }),
+  createdAt: timestamp("created_at",{ withTimezone: true }).defaultNow(),
 });
-
-/**
- * Quotes (unchanged)
- */
 export const quotes = pgTable("quotes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   rentAmount: decimal("rent_amount", { precision: 10, scale: 2 }).notNull(),
   riskFactor: varchar("risk_factor").notNull(), // low, medium, high
   coverageLevel: varchar("coverage_level").notNull(), // basic, standard, premium
-  monthlyPremium: decimal("monthly_premium", { precision: 10, scale: 2 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  monthlyPremium: decimal("monthly_premium", {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
+  createdAt: timestamp("created_at",{ withTimezone: true }).defaultNow(),
+});
+export const scoringConfigs = pgTable("scoring_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  configJson: text("config_json").notNull(),
+  createdAt: timestamp("created_at",{ withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at",{ withTimezone: true }).defaultNow(),
 });
 
 /**
- * Insert schemas (zod + drizzle-zod helpers)
+ * NEW: Policies table
  */
-export const insertUserSchema = createInsertSchema(users).omit({
+export const policies = pgTable("policies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  landlordId: varchar("landlord_id").notNull().references(() => landlords.id, { onDelete: "cascade" }),
+  propertyId: varchar("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  tenantId: varchar("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }).unique(),
+  policyNumber: varchar("policy_number").notNull().unique(),
+  status: varchar("status").notNull().default("active"), // active, expired, cancelled
+  coverageMonths: integer("coverage_months").notNull(),
+  riskScore: decimal("risk_score", { precision: 5, scale: 2 }).notNull(),
+  decision: varchar("decision").notNull(), // accept, conditional_accept, decline
+  startDate: timestamp("start_date",{ withTimezone: true }).notNull(),
+  endDate: timestamp("end_date",{ withTimezone: true }).notNull(),
+  premiumAmount: decimal("premium_amount", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at",{ withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at",{ withTimezone: true }).defaultNow(),
+});
+
+/**
+ * NEW: Claims table
+ */
+export const claims = pgTable("claims", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  policyId: varchar("policy_id").notNull().references(() => policies.id, { onDelete: "cascade" }),
+  claimNumber: varchar("claim_number").notNull().unique(),
+  status: varchar("status").notNull().default("pending"), // pending, approved, rejected, paid
+  amountRequested: decimal("amount_requested", { precision: 10, scale: 2 }).notNull(),
+  monthsOfUnpaidRent: integer("months_of_unpaid_rent").notNull().default(0),
+  evidenceLinks: jsonb("evidence_links").$type<string[]>(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at",{ withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at",{ withTimezone: true }).defaultNow(),
+});
+
+
+/**
+ * Insert schemas
+ */
+export const insertUserSchema = createInsertSchema(users, {
+  companyName: z.string().optional(),
+}).omit({
   id: true,
   createdAt: true,
+  isVerified: true,
+  resetPasswordToken: true,
+  resetPasswordExpires: true,
+  // Omit new OTP fields from the insert schema
+  otpHash: true,
+  otpExpires: true,
+  otpAttempts: true,
+  lastOtpSentAt: true,
 });
 
 export const insertLandlordSchema = createInsertSchema(landlords).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  propertyCount: true, // propertyCount is managed automatically
+  propertyCount: true,
 });
 
-// Validation: restrict status to allowed values
-export const insertPropertySchema = createInsertSchema(properties).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  rentAmount: z.union([z.string(), z.number()]).transform(val =>
-    typeof val === "string" ? parseFloat(val) : val
-  ),
-  status: z.enum(["available", "rented", "maintenance"]),
-  maxTenants: z.coerce.number().int().min(1).default(1),
-  currentTenants: z.coerce.number().int().min(0).default(0),
-});
+export const insertPropertySchema = createInsertSchema(properties)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    rentAmount: z
+      .union([z.string(), z.number()])
+      .transform((val) => (typeof val === "string" ? parseFloat(val) : val)),
+    status: z.enum(["available", "rented", "maintenance"]),
+    maxTenants: z.coerce.number().int().min(1).default(1),
+    currentTenants: z.coerce.number().int().min(0).default(0),
+  });
 
-export const insertTenantSchema = createInsertSchema(tenants).omit({
-  id: true,
-  createdAt: true,
-}).extend({
-  leaseStart: z.coerce.date(),
-  leaseEnd: z.coerce.date(),
-  lastPaymentDate: z.coerce.date().optional(),
-  rentAmount: z.union([z.string(), z.number()]).transform(val =>
-    typeof val === "string" ? parseFloat(val) : val
-  ),
-});
+export const insertTenantSchema = createInsertSchema(tenants)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    leaseStart: z.coerce.date(),
+    leaseEnd: z.coerce.date(),
+    lastPaymentDate: z.coerce.date().optional(),
+    rentAmount: z
+      .union([z.string(), z.number()])
+      .transform((val) => (typeof val === "string" ? parseFloat(val) : val)),
+  });
 
-export const insertQuoteSchema = createInsertSchema(quotes).omit({
-  id: true,
-  createdAt: true,
-}).extend({
-  rentAmount: z.union([z.string(), z.number()]).transform(val =>
-    typeof val === "string" ? parseFloat(val) : val
-  ),
-  monthlyPremium: z.union([z.string(), z.number()]).transform(val =>
-    typeof val === "string" ? parseFloat(val) : val
-  ),
-});
-// add this block in src/database/schema.ts (with the other pgTable definitions)
-export const scoringConfigs = pgTable("scoring_configs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  // We'll store config JSON as text for portability; convert to/from JSON in code.
-  configJson: text("config_json").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const insertQuoteSchema = createInsertSchema(quotes)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    rentAmount: z
+      .union([z.string(), z.number()])
+      .transform((val) => (typeof val === "string" ? parseFloat(val) : val)),
+    monthlyPremium: z
+      .union([z.string(), z.number()])
+      .transform((val) => (typeof val === "string" ? parseFloat(val) : val)),
+  });
 
-// insert schema helper types if you use createInsertSchema (optional)
 export const insertScoringConfigSchema = createInsertSchema(scoringConfigs).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
+export const insertPolicySchema = createInsertSchema(policies, {
+    status: z.enum(["active", "expired", "cancelled"]).default("active"),
+    riskScore: z.number(),
+    premiumAmount: z.number(),
+}).omit({ id: true, policyNumber: true, createdAt: true, updatedAt: true }).extend({
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
+});
+export const insertClaimSchema = createInsertSchema(claims, {
+    status: z.enum(["pending", "approved", "rejected", "paid"]).default("pending"),
+    amountRequested: z.number(),
+    evidenceLinks: z.array(z.string().url()).optional(),
+}).omit({ id: true, claimNumber: true, createdAt: true, updatedAt: true });
 /**
- * Login schema
+ * Login and other specific schemas
  */
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -184,3 +271,7 @@ export type LoginCredentials = z.infer<typeof loginSchema>;
 export type ScoringConfig = typeof scoringConfigs.$inferSelect;
 export type InsertScoringConfig = z.infer<typeof insertScoringConfigSchema>;
 
+export type Policy = typeof policies.$inferSelect;
+export type InsertPolicy = z.infer<typeof insertPolicySchema>;
+export type Claim = typeof claims.$inferSelect;
+export type InsertClaim = z.infer<typeof insertClaimSchema>;

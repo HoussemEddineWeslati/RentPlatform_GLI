@@ -1,12 +1,14 @@
-//src/config/session.ts
+// src/config/session.ts
+
 import session, { type SessionOptions } from "express-session";
 import memorystore from "memorystore";
-
 const MemoryStore = (memorystore as any)(session);
 
+// Checklist 1: Remove OTP from session, only keep a reference to the email being verified.
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+    unverifiedEmail?: string; // Keep this to link session to the user verifying
   }
 }
 
@@ -21,8 +23,9 @@ export const sessionConfig: SessionOptions = {
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: isProd, // require HTTPS in prod
-    sameSite: isProd ? "none" : "lax", // use None in prod for cross-site cookies; lax in dev
+    // Checklist 3: Enforce HTTPS cookies in production. Use 'strict' for better CSRF protection.
+    secure: isProd,
+    sameSite: isProd ? "strict" : "lax",
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   },
 };

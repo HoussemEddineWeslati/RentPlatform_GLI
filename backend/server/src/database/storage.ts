@@ -10,22 +10,34 @@ import {
   type InsertQuote,
   type Landlord,
   type InsertLandlord,
+  type Policy,
+  type InsertPolicy,
+  type Claim,
+  type InsertClaim,
   users,
   properties,
   tenants,
   quotes,
   landlords,
+  policies,
+  claims,
 } from "./schema.js";
 import { db } from "./connection.js";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, gt, desc } from "drizzle-orm";
 import { scoringConfigs } from "./schema.js";
-import { scoringConfigSchema, type ScoringConfig as ParsedScoringConfig } from "../validators/configSchema.js"; 
+import {
+  scoringConfigSchema,
+  type ScoringConfig as ParsedScoringConfig,
+} from "../validators/configSchema.js";
+
 
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>; // NEW
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, user: Partial<User>): Promise<User | undefined>; // NEW
 
   // Landlord operations
   getLandlords(userId: string): Promise<Landlord[]>;
@@ -54,23 +66,63 @@ export interface IStorage {
   // Quote operations
   getQuotes(userId: string): Promise<Quote[]>;
   createQuote(quote: InsertQuote): Promise<Quote>;
+
+ // Policy operations
+  getAllPolicies(userId: string): Promise<any[]>;
+  getPoliciesByLandlord(userId: string, landlordId: string): Promise<any[]>;
+  getPoliciesByTenant(userId: string, tenantId: string): Promise<Policy[]>;
+  getPolicyById(id: string, userId: string): Promise<any | undefined>;
+  createPolicy(policy: InsertPolicy): Promise<Policy>;
+  updatePolicy(id: string, userId: string, policy: Partial<Policy>): Promise<Policy | undefined>;
+  deletePolicy(id: string, userId: string): Promise<boolean>;
+
+  // Claim operations
+  getAllClaims(userId: string): Promise<any[]>;
+  getClaimsByLandlord(userId: string, landlordId: string): Promise<any[]>;
+  getClaimsByPolicy(userId: string, policyId: string): Promise<Claim[]>;
+  getClaimsByTenant(userId: string, tenantId: string): Promise<any[]>;
+  getClaimById(id: string, userId: string): Promise<any | undefined>;
+  createClaim(claim: InsertClaim): Promise<Claim>;
+  updateClaim(id: string, userId: string, claim: Partial<Claim>): Promise<Claim | undefined>;
+  deleteClaim(id: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations
+  // --- User operations ---
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
-
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
-
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.resetPasswordToken, token),
+          gt(users.resetPasswordExpires, sql`now()`)
+        )
+      );
+    return user || undefined;
+  }
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+  async updateUser(
+    id: string,
+    userUpdate: Partial<User>
+  ): Promise<User | undefined> {
+    const [updated] = await db
+      .update(users)
+      .set(userUpdate)
+      .where(eq(users.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   // Landlord operations
@@ -216,6 +268,144 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return quote;
   }
+
+
+// --- Policy operations ---
+    async getAllPolicies(userId: string): Promise<any[]> {
+        return await db.select({
+            id: policies.id, policyNumber: policies.policyNumber, status: policies.status,
+            tenantName: tenants.name, landlordName: landlords.name
+        }).from(policies)
+        .innerJoin(tenants, eq(policies.tenantId, tenants.id))
+        .innerJoin(landlords, eq(policies.landlordId, landlords.id))
+        .where(eq(policies.userId, userId)).orderBy(desc(policies.createdAt));
+    }
+    async getPoliciesByLandlord(userId: string, landlordId: string): Promise<any[]> {
+        return await db.select({
+            id: policies.id, policyNumber: policies.policyNumber, riskScore: policies.riskScore,
+            status: policies.status, tenantName: tenants.name, propertyName: properties.name,
+        }).from(policies)
+        .innerJoin(tenants, eq(policies.tenantId, tenants.id))
+        .innerJoin(properties, eq(policies.propertyId, properties.id))
+        .where(and(eq(policies.userId, userId), eq(policies.landlordId, landlordId)))
+        .orderBy(desc(policies.createdAt));
+    }
+    async getPoliciesByTenant(userId: string, tenantId: string): Promise<Policy[]> {
+        return await db.select().from(policies)
+            .where(and(eq(policies.userId, userId), eq(policies.tenantId, tenantId)));
+    }
+
+    /**
+     * FIXED: This function now correctly selects nested objects.
+     */
+    async getPolicyById(id: string, userId: string): Promise<any | undefined> {
+        const [result] = await db.select({
+            // Assign each table to a key to create a nested result object
+            policy: policies,
+            tenant: tenants,
+            property: properties,
+            landlord: landlords,
+        }).from(policies)
+        .innerJoin(tenants, eq(policies.tenantId, tenants.id))
+        .innerJoin(properties, eq(policies.propertyId, properties.id))
+        .innerJoin(landlords, eq(policies.landlordId, landlords.id))
+        .where(and(eq(policies.id, id), eq(policies.userId, userId)));
+        
+        // The result will be an object like: { policy: {...}, tenant: {...}, ... }
+        return result || undefined;
+    }
+
+    async createPolicy(insertPolicy: InsertPolicy): Promise<Policy> {
+        const policyNumber = `GLI-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(Date.now()).slice(-6)}`;
+        const [policy] = await db.insert(policies).values({
+            ...insertPolicy,
+            policyNumber,
+            riskScore: insertPolicy.riskScore.toString(),
+            premiumAmount: insertPolicy.premiumAmount.toString(),
+        }).returning();
+        return policy;
+    }
+    async updatePolicy(id: string, userId: string, policyUpdate: Partial<Policy>): Promise<Policy | undefined> {
+        const [updated] = await db.update(policies).set({ ...policyUpdate, updatedAt: sql`now()` }).where(and(eq(policies.id, id), eq(policies.userId, userId))).returning();
+        return updated || undefined;
+    }
+    async deletePolicy(id: string, userId: string): Promise<boolean> {
+        const existingClaims = await db.select().from(claims).where(eq(claims.policyId, id)).limit(1);
+        if (existingClaims.length > 0) {
+            throw new Error("Cannot delete a policy with active claims.");
+        }
+        const result = await db.delete(policies).where(and(eq(policies.id, id), eq(policies.userId, userId)));
+        return result.rowCount !== null && result.rowCount > 0;
+    }
+
+    // --- Claim operations ---
+    async getAllClaims(userId: string): Promise<any[]> {
+        return await db.select({
+            id: claims.id, claimNumber: claims.claimNumber, status: claims.status,
+            amountRequested: claims.amountRequested, policyNumber: policies.policyNumber, landlordName: landlords.name
+        }).from(claims)
+        .innerJoin(policies, eq(claims.policyId, policies.id))
+        .innerJoin(landlords, eq(policies.landlordId, landlords.id))
+        .where(eq(claims.userId, userId)).orderBy(desc(claims.createdAt));
+    }
+    async getClaimsByLandlord(userId: string, landlordId: string): Promise<any[]> {
+        return await db.select({
+            id: claims.id, claimNumber: claims.claimNumber, amountRequested: claims.amountRequested,
+            status: claims.status, policyNumber: policies.policyNumber
+        }).from(claims)
+        .innerJoin(policies, eq(claims.policyId, policies.id))
+        .where(and(eq(claims.userId, userId), eq(policies.landlordId, landlordId)))
+        .orderBy(desc(claims.createdAt));
+    }
+    async getClaimsByPolicy(userId: string, policyId: string): Promise<Claim[]> {
+        return await db.select().from(claims)
+            .where(and(eq(claims.userId, userId), eq(claims.policyId, policyId)));
+    }
+    async getClaimsByTenant(userId: string, tenantId: string): Promise<any[]> {
+        return await db.select({
+            id: claims.id, claimNumber: claims.claimNumber, status: claims.status,
+            amountRequested: claims.amountRequested, policyNumber: policies.policyNumber
+        }).from(claims)
+        .innerJoin(policies, eq(claims.policyId, policies.id))
+        .where(and(eq(claims.userId, userId), eq(policies.tenantId, tenantId)))
+        .orderBy(desc(claims.createdAt));
+    }
+    
+    /**
+     * FIXED: This function now correctly selects nested objects.
+     */
+    async getClaimById(id: string, userId: string): Promise<any | undefined> {
+        const [result] = await db.select({
+            // Assign each table to a key
+            claim: claims,
+            policy: policies,
+            tenant: tenants
+        }).from(claims)
+        .innerJoin(policies, eq(claims.policyId, policies.id))
+        .innerJoin(tenants, eq(policies.tenantId, tenants.id))
+        .where(and(eq(claims.id, id), eq(claims.userId, userId)));
+        
+        return result || undefined;
+    }
+
+    async createClaim(insertClaim: InsertClaim): Promise<Claim> {
+        const claimNumber = `CLM-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(Date.now()).slice(-6)}`;
+        const [claim] = await db.insert(claims).values({
+            ...insertClaim,
+            claimNumber,
+            amountRequested: insertClaim.amountRequested.toString(),
+        }).returning();
+        return claim;
+    }
+    async updateClaim(id: string, userId: string, claimUpdate: Partial<Claim>): Promise<Claim | undefined> {
+        const [updated] = await db.update(claims).set({ ...claimUpdate, updatedAt: sql`now()` }).where(and(eq(claims.id, id), eq(claims.userId, userId))).returning();
+        return updated || undefined;
+    }
+    async deleteClaim(id: string, userId: string): Promise<boolean> {
+        const result = await db.delete(claims).where(and(eq(claims.id, id), eq(claims.userId, userId)));
+        return result.rowCount !== null && result.rowCount > 0;
+    }
+
   // Scoring config operations
 async getScoringConfig(userId: string): Promise<ParsedScoringConfig | undefined> {
   const [row] = await db

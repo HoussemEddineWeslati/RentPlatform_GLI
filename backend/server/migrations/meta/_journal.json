@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1760547297952,
+      "tag": "0000_nostalgic_texas_twister",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760554523087,
+      "tag": "0001_greedy_nightcrawler",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760724064748,
+      "tag": "0002_gifted_plazm",
+      "breakpoints": true
+    }
+  ]
+}
