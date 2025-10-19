@@ -1,3 +1,4 @@
+// src/components/navbar/index.tsx
 import {
   DropdownMenu,
   DropdownMenuContent,

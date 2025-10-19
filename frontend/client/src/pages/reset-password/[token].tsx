@@ -45,7 +45,7 @@ export default function ResetPassword() {
     try {
       await apiRequest(
         "POST",
-        `/api/auth/reset/${encodeURIComponent(tokenFromPath)}`,
+        `/api/auth/reset-password/${encodeURIComponent(tokenFromPath)}`,
         { password: data.password }
       );
       toast({

@@ -1,3 +1,4 @@
+// src/App.tsx
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Route, Switch, useLocation, useRoute } from "wouter"; // Import useRoute
 import { Toaster } from "@/components/ui/toaster";
