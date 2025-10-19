@@ -1,5 +1,4 @@
-// client/src/pages/login/index.tsx
-// import { useState } from "react";
+// src/pages/login/index.tsx
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,7 +27,8 @@ export default function Login() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginCredentials) => apiRequest("POST", "/api/auth/login", data),
+    mutationFn: (data: LoginCredentials) =>
+      apiRequest("POST", "/api/auth/login", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
@@ -38,9 +38,24 @@ export default function Login() {
       navigate("/dashboard");
     },
     onError: (error: any) => {
+      const status =
+        error?.status ?? error?.data?.status ?? error?.response?.status;
+      const message = error?.data?.message || error?.message || "";
+
+      // if not verified => redirect to verify page
+      if (status === 403 && /verify/i.test(String(message))) {
+        const attemptedEmail = form.getValues().email || "";
+        navigate(`/verify?email=${encodeURIComponent(attemptedEmail)}`);
+        toast({
+          title: "Email not verified",
+          description: "Please enter the verification code sent to your email.",
+        });
+        return;
+      }
+
       toast({
         title: "Login failed",
-        description: error?.message || "Invalid email or password",
+        description: message || "Invalid email or password",
         variant: "destructive",
       });
     },
@@ -57,14 +72,21 @@ export default function Login() {
           <CardContent className="p-8">
             <div className="text-center">
               <Shield className="text-primary text-4xl mb-4 mx-auto" />
-              <h2 className="text-3xl font-bold text-foreground">Sign in to GLI Pro</h2>
-              <p className="mt-2 text-muted-foreground">Access your rental management dashboard</p>
+              <h2 className="text-3xl font-bold text-foreground">
+                Sign in to GLI Pro
+              </h2>
+              <p className="mt-2 text-muted-foreground">
+                Access your rental management dashboard
+              </p>
             </div>
-            
+
             <form className="mt-8 space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="email" className="block text-sm font-medium text-foreground">
+                  <Label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-foreground"
+                  >
                     Email address
                   </Label>
                   <Input
@@ -81,9 +103,12 @@ export default function Login() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
-                  <Label htmlFor="password" className="block text-sm font-medium text-foreground">
+                  <Label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-foreground"
+                  >
                     Password
                   </Label>
                   <Input
@@ -105,14 +130,19 @@ export default function Login() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Checkbox id="remember-me" />
-                  <Label htmlFor="remember-me" className="ml-2 block text-sm text-muted-foreground">
+                  <Label
+                    htmlFor="remember-me"
+                    className="ml-2 block text-sm text-muted-foreground"
+                  >
                     Remember me
                   </Label>
                 </div>
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-primary hover:opacity-80">
-                    Forgot password?
-                  </a>
+                  <Link href="/forgot-password">
+                    <a className="font-medium text-primary hover:opacity-80">
+                      Forgot password?
+                    </a>
+                  </Link>
                 </div>
               </div>
 
@@ -128,7 +158,9 @@ export default function Login() {
               </div>
 
               <div className="text-center">
-                <span className="text-muted-foreground">Don't have an account?</span>
+                <span className="text-muted-foreground">
+                  Don't have an account?
+                </span>
                 <Link href="/signup" data-testid="link-signup-from-login">
                   <Button variant="link" className="font-medium ml-1">
                     Sign up here

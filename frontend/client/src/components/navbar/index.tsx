@@ -1,4 +1,3 @@
-// src/components/navbar/index.tsx
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +18,7 @@ import { useState } from "react";
 import { Shield, Menu, X, LogOut } from "lucide-react";
 
 export function Navbar() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation(); // FIX: Get the current location
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -64,16 +63,18 @@ export function Navbar() {
             <Shield className="text-primary h-8 w-8" />
             <span className="text-xl font-bold text-foreground">GLI Pro</span>
           </Link>
-
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             {isAuthenticated ? (
               <>
-                <Link href="/dashboard">
-                  <Button variant="outline">
-                    Go to Dashboard
-                  </Button>
-                </Link>
+                {/* FIX: Only show 'Go to Dashboard' if NOT on dashboard */}
+                {location !== "/dashboard" && (
+                  <Link href="/dashboard">
+                    <Button variant="outline">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                )}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -94,14 +95,14 @@ export function Navbar() {
                     <DropdownMenuSeparator />
                     <Link href="/settings">
                       <DropdownMenuItem>
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Settings</span>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
                        <LogOut className="h-4 w-4 mr-2" />
-                       {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                      {logoutMutation.isPending ? "Logging out..." : "Logout"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -117,7 +118,6 @@ export function Navbar() {
               </>
             )}
           </div>
-
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <Button
@@ -134,7 +134,6 @@ export function Navbar() {
             </Button>
           </div>
         </div>
-
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-border">
@@ -144,14 +143,19 @@ export function Navbar() {
                   <div className="px-3 py-2 text-sm text-muted-foreground">
                     Welcome, {user?.firstName}
                   </div>
-                  <Link href="/dashboard" className="block">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start mb-2"
-                    >
-                      Go to Dashboard
-                    </Button>
-                  </Link>
+                  
+                  {/* FIX: Only show 'Go to Dashboard' if NOT on dashboard */}
+                  {location !== "/dashboard" && (
+                    <Link href="/dashboard" className="block">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start mb-2"
+                      >
+                        Go to Dashboard
+                      </Button>
+                    </Link>
+                  )}
+                  
                   <Link href="/settings" className="block">
                      <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground">
                         <Settings className="mr-2 h-4 w-4" />

@@ -1,3 +1,4 @@
+// src/pages/dashboard/index.tsx
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";

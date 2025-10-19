@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
-import { insertUserSchema/*, type InsertQuote */} from "../../types/schema";
+import { insertUserSchema } from "../../types/schema";
 import { z } from "zod";
 import { UserPlus } from "lucide-react";
 
@@ -19,13 +19,19 @@ export default function Signup() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const signupFormSchema = insertUserSchema.extend({
-    confirmPassword: z.string().min(6),
-    terms: z.boolean().refine(val => val === true, { message: "You must accept the terms" })
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+  // Extend the shared insertUserSchema with form-only fields + companyName
+  const signupFormSchema = insertUserSchema
+    .extend({
+      companyName: z.string().min(1, "Company name is required"),
+      confirmPassword: z.string().min(6),
+      terms: z
+        .boolean()
+        .refine((val) => val === true, { message: "You must accept the terms" }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ["confirmPassword"],
+    });
 
   type SignupFormData = z.infer<typeof signupFormSchema>;
 
@@ -37,27 +43,32 @@ export default function Signup() {
       email: "",
       password: "",
       confirmPassword: "",
+      companyName: "",
       terms: false,
     },
   });
 
   const signupMutation = useMutation({
     mutationFn: (data: SignupFormData) => {
-      const { confirmPassword, terms, ...userData } = data;
+      // remove confirmPassword and terms before sending
+      const { confirmPassword, terms, ...userData } = data as any;
       return apiRequest("POST", "/api/auth/signup", userData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
-        title: "Account created successfully",
-        description: "Welcome to GLI Pro!",
+        title: "Signup successful",
+        description: "Please check your email for the verification code.",
       });
-      navigate("/dashboard");
+      // navigate to verify page with email param so user can enter OTP
+      const email = form.getValues().email;
+      navigate(`/verify?email=${encodeURIComponent(email)}`);
     },
     onError: (error: any) => {
       toast({
         title: "Signup failed",
-        description: error?.message || "Failed to create account",
+        description:
+          error?.data?.message || error?.message || "Failed to create account",
         variant: "destructive",
       });
     },
@@ -74,15 +85,22 @@ export default function Signup() {
           <CardContent className="p-8">
             <div className="text-center">
               <UserPlus className="text-primary text-4xl mb-4 mx-auto" />
-              <h2 className="text-3xl font-bold text-foreground">Create your account</h2>
-              <p className="mt-2 text-muted-foreground">Start protecting your rental income today</p>
+              <h2 className="text-3xl font-bold text-foreground">
+                Create your account
+              </h2>
+              <p className="mt-2 text-muted-foreground">
+                Start protecting your rental income today
+              </p>
             </div>
-            
+
             <form className="mt-8 space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="firstName" className="block text-sm font-medium text-foreground">
+                    <Label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium text-foreground"
+                    >
                       First Name
                     </Label>
                     <Input
@@ -99,9 +117,12 @@ export default function Signup() {
                       </p>
                     )}
                   </div>
-                  
+
                   <div>
-                    <Label htmlFor="lastName" className="block text-sm font-medium text-foreground">
+                    <Label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium text-foreground"
+                    >
                       Last Name
                     </Label>
                     <Input
@@ -119,9 +140,34 @@ export default function Signup() {
                     )}
                   </div>
                 </div>
-                
+
                 <div>
-                  <Label htmlFor="email" className="block text-sm font-medium text-foreground">
+                  <Label
+                    htmlFor="companyName"
+                    className="block text-sm font-medium text-foreground"
+                  >
+                    Company name
+                  </Label>
+                  <Input
+                    id="companyName"
+                    type="text"
+                    placeholder="Company or organization name"
+                    data-testid="input-company-name"
+                    {...form.register("companyName")}
+                    className="mt-1"
+                  />
+                  {form.formState.errors.companyName && (
+                    <p className="mt-1 text-sm text-destructive">
+                      {form.formState.errors.companyName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-foreground"
+                  >
                     Email address
                   </Label>
                   <Input
@@ -138,9 +184,12 @@ export default function Signup() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
-                  <Label htmlFor="password" className="block text-sm font-medium text-foreground">
+                  <Label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-foreground"
+                  >
                     Password
                   </Label>
                   <Input
@@ -157,9 +206,12 @@ export default function Signup() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
-                  <Label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
+                  <Label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-foreground"
+                  >
                     Confirm Password
                   </Label>
                   <Input
@@ -179,15 +231,26 @@ export default function Signup() {
               </div>
 
               <div className="flex items-center">
-                <Checkbox 
-                  id="terms" 
+                <Checkbox
+                  id="terms"
                   checked={form.watch("terms") || false}
-                  onCheckedChange={(checked) => form.setValue("terms", checked === true)}
-                  data-testid="checkbox-terms" 
+                  onCheckedChange={(checked) =>
+                    form.setValue("terms", checked === true)
+                  }
+                  data-testid="checkbox-terms"
                 />
-                <Label htmlFor="terms" className="ml-2 block text-sm text-muted-foreground">
-                  I agree to the <a href="#" className="text-primary hover:opacity-80">Terms of Service</a> and{" "}
-                  <a href="#" className="text-primary hover:opacity-80">Privacy Policy</a>
+                <Label
+                  htmlFor="terms"
+                  className="ml-2 block text-sm text-muted-foreground"
+                >
+                  I agree to the{" "}
+                  <a href="#" className="text-primary hover:opacity-80">
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a href="#" className="text-primary hover:opacity-80">
+                    Privacy Policy
+                  </a>
                 </Label>
               </div>
               {form.formState.errors.terms && (
@@ -203,12 +266,16 @@ export default function Signup() {
                   disabled={signupMutation.isPending}
                   data-testid="button-signup"
                 >
-                  {signupMutation.isPending ? "Creating Account..." : "Create Account"}
+                  {signupMutation.isPending
+                    ? "Creating Account..."
+                    : "Create Account"}
                 </Button>
               </div>
 
               <div className="text-center">
-                <span className="text-muted-foreground">Already have an account?</span>
+                <span className="text-muted-foreground">
+                  Already have an account?
+                </span>
                 <Link href="/login" data-testid="link-login-from-signup">
                   <Button variant="link" className="font-medium ml-1">
                     Sign in here

@@ -1,4 +1,4 @@
-// Types
+// src/types/schema.ts
 export type User = {
   id: string;
   email: string;
@@ -13,6 +13,7 @@ import { z } from "zod";
 export const insertUserSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  companyName: z.string().min(1, "Company name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
@@ -21,6 +22,7 @@ export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
+export type LoginCredentials = z.infer<typeof loginSchema>;
 
 // =================================================================================
 // LANDLORD SCHEMA
