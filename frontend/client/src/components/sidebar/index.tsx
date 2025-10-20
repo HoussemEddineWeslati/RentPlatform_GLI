@@ -1,4 +1,4 @@
-//src\components\sidebar\index.tsx :
+// src/components/sidebar/index.tsx
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -10,13 +10,36 @@ import {
   Menu,
   X,
   UserSquare,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function Sidebar() {
   const { isAuthenticated } = useAuth();
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Load collapsed state from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    if (saved !== null) {
+      setIsCollapsed(JSON.parse(saved));
+    }
+  }, []);
+
+  // Save collapsed state to localStorage
+  const toggleCollapsed = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem("sidebar-collapsed", JSON.stringify(newState));
+  };
 
   if (!isAuthenticated) return null;
 
@@ -26,61 +49,153 @@ export function Sidebar() {
     { name: "Risk Calculator", href: "/quote", icon: Calculator },
   ];
 
+  const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
+    <>
+      {/* Logo Section */}
+      <div
+        className={cn(
+          "flex h-16 items-center border-b border-border transition-all duration-300",
+          isCollapsed && !isMobile ? "justify-center px-2" : "justify-between px-6"
+        )}
+      >
+        <Link href="/" className="flex items-center space-x-2 group">
+          <Shield className={cn(
+            "text-primary transition-all group-hover:scale-110",
+            isCollapsed && !isMobile ? "h-10 w-10" : "h-8 w-8"
+          )} />
+          {(!isCollapsed || isMobile) && (
+            <span className="text-xl font-bold text-foreground whitespace-nowrap">
+              GLI Pro
+            </span>
+          )}
+        </Link>
+
+        {/* Desktop Collapse Toggle */}
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleCollapsed}
+            className={cn(
+              "h-8 w-8 rounded-full transition-all duration-300 hover:bg-primary/10",
+              isCollapsed && "absolute -right-3 top-5 bg-white border border-border shadow-md"
+            )}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="mt-6 px-3 flex-1 overflow-y-auto">
+        <div className="space-y-1">
+          {navigation.map((item) => {
+            const isActive = location.startsWith(item.href);
+            
+            const ButtonContent = (
+              <button
+                className={cn(
+                  "w-full transition-all duration-200 rounded-lg flex items-center relative overflow-hidden",
+                  isCollapsed && !isMobile
+                    ? "justify-center p-3"
+                    : "justify-start px-4 py-3",
+                  isActive
+                    ? "bg-primary/10 text-primary hover:bg-primary/20"
+                    : "text-muted-foreground hover:bg-gray-100 hover:text-foreground"
+                )}
+                onClick={() => isMobile && setIsMobileOpen(false)}
+              >
+                {/* Icon container with fixed size */}
+                <div className="flex items-center justify-center w-7 h-7 flex-shrink-0">
+                  <item.icon
+                    className="h-7 w-7"
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                </div>
+                {(!isCollapsed || isMobile) && (
+                  <span className={cn(
+                    "ml-3 text-base transition-opacity duration-200 whitespace-nowrap",
+                    isActive && "font-semibold",
+                    isCollapsed && !isMobile ? "opacity-0 w-0" : "opacity-100"
+                  )}>
+                    {item.name}
+                  </span>
+                )}
+              </button>
+            );
+
+            return (
+              <Link key={item.name} href={item.href}>
+                {isCollapsed && !isMobile ? (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>{ButtonContent}</TooltipTrigger>
+                    <TooltipContent side="right" className="font-medium">
+                      {item.name}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  ButtonContent
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Footer Section (optional) */}
+      {(!isCollapsed || isMobile) && (
+        <div className="p-4 border-t border-border">
+          <div className="text-xs text-muted-foreground text-center">
+            © 2025 GLI Pro
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <>
       {/* Mobile menu button */}
-      <div className="lg:hidden">
+      <div className="lg:hidden fixed top-20 left-4 z-50">
         <Button
-          variant="ghost"
-          className="fixed top-4 left-4 z-50"
+          variant="outline"
+          size="icon"
+          className="bg-white shadow-lg"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
         >
-          {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
 
-      {/* Sidebar */}
-      <div
+      {/* Desktop Sidebar */}
+      <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+          "hidden lg:flex fixed inset-y-0 left-0 z-50 bg-white border-r border-border flex-col transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-20" : "w-64"
+        )}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <aside
+        className={cn(
+          "lg:hidden fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-border flex flex-col transform transition-transform duration-300 ease-in-out",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center px-6 border-b border-border">
-          <Link href="/" className="flex items-center space-x-2">
-            <Shield className="text-primary h-8 w-8" />
-            <span className="text-xl font-bold text-foreground">GLI Pro</span>
-          </Link>
-        </div>
-        <nav className="mt-6 px-3">
-          <div className="space-y-1">
-            {navigation.map((item) => {
-              const isActive = location.startsWith(item.href);
-              return (
-                <Link key={item.name} href={item.href}>
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start",
-                      isActive &&
-                        "bg-primary/10 text-primary hover:bg-primary/20"
-                    )}
-                    onClick={() => setIsMobileOpen(false)}
-                  >
-                    <item.icon className="mr-3 h-5 w-5" />
-                    {item.name}
-                  </Button>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      </div>
+        <SidebarContent isMobile />
+      </aside>
 
       {/* Mobile overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black bg-opacity-50 lg:hidden"
+          className="lg:hidden fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
