@@ -74,3 +74,36 @@ export const sendPasswordChangedConfirmation = async (to: string) => {
   };
   await transporter.sendMail(mailOptions);
 };
+
+
+/**
+ * Send account deletion confirmation email
+ */
+export const sendAccountDeletionConfirmation = async (to: string) => {
+  const mailOptions = {
+    from: fromEmail,
+    to,
+    subject: `Account Deleted - ${appName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #e74c3c;">Account Deletion Confirmation</h2>
+        <p>This email confirms that your ${appName} account has been permanently deleted.</p>
+        <p>All your data, including:</p>
+        <ul>
+          <li>Personal information</li>
+          <li>Landlords</li>
+          <li>Properties</li>
+          <li>Tenants</li>
+          <li>Policies</li>
+          <li>Claims</li>
+        </ul>
+        <p>has been removed from our system.</p>
+        <p>If you did not request this deletion, please contact our support team immediately at <a href="mailto:${process.env.EMAIL_USER}">${process.env.EMAIL_USER}</a>.</p>
+        <p>We're sorry to see you go. If you have any feedback about your experience, we'd love to hear from you.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="color: #7f8c8d; font-size: 12px;">© ${new Date().getFullYear()} ${appName}. All rights reserved.</p>
+      </div>
+    `,
+  };
+  await transporter.sendMail(mailOptions);
+};

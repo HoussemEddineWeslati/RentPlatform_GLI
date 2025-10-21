@@ -1,13 +1,13 @@
-// src/components/navbar/index.tsx
+// src/components/navbar/index.tsx - UPDATED VERSION
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, User } from "lucide-react";
+import { Settings, User, UserCog, LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/api";
@@ -15,23 +15,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { Shield, LogOut } from "lucide-react";
+import { Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [location, navigate] = useLocation();
   const { user: userResponse, isAuthenticated, isLoading } = useAuth();
-  
-  // Extract the actual user data from the response
-  // Handle both formats: direct user object or wrapped in {success, data}
   const user = (userResponse as any)?.data || userResponse;
-  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Track sidebar state for proper navbar positioning
   useEffect(() => {
     const checkSidebarState = () => {
       const saved = localStorage.getItem("sidebar-collapsed");
@@ -68,7 +63,6 @@ export function Navbar() {
   const handleLogout = () => logoutMutation.mutate();
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
-  // Determine if we're on a route that shows the sidebar
   const noSidebarPaths = ["/", "/login", "/signup", "/verify", "/forgot-password"];
   const isResetPasswordRoute = location.startsWith("/reset-password/");
   const showsSidebar = isAuthenticated && !noSidebarPaths.includes(location) && !isResetPasswordRoute;
@@ -86,7 +80,6 @@ export function Navbar() {
     >
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo - Only show on non-sidebar pages */}
           {!showsSidebar && (
             <Link
               href="/"
@@ -96,14 +89,11 @@ export function Navbar() {
               <span className="text-xl font-bold text-foreground">GLI Pro</span>
             </Link>
           )}
-
-          {/* Spacer for sidebar pages */}
           {showsSidebar && <div className="flex-1" />}
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center ml-auto">
             {isLoading ? (
-              // Loading state - show nothing to prevent flash
               <div className="w-12 h-12" />
             ) : isAuthenticated ? (
               <div className="flex items-center gap-4">
@@ -114,8 +104,6 @@ export function Navbar() {
                     </Button>
                   </Link>
                 )}
-                
-                {/* User Menu - Fixed Position Container */}
                 <div className="relative w-12 h-12">
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
@@ -137,6 +125,13 @@ export function Navbar() {
                           </p>
                         </div>
                       </div>
+                      {/* NEW: Profile Settings Menu Item */}
+                      <Link href="/profile">
+                        <DropdownMenuItem className="cursor-pointer">
+                          <UserCog className="mr-2 h-4 w-4" />
+                          <span>Profile Settings</span>
+                        </DropdownMenuItem>
+                      </Link>
                       <Link href="/settings">
                         <DropdownMenuItem className="cursor-pointer">
                           <Settings className="mr-2 h-4 w-4" />
@@ -170,7 +165,7 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button - Only on non-sidebar pages */}
+          {/* Mobile Menu Button */}
           {!showsSidebar && (
             <div className="md:hidden">
               <Button
@@ -194,40 +189,47 @@ export function Navbar() {
                 <div className="w-10 h-10" />
               ) : (
                 <div className="relative w-10 h-10">
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className="absolute inset-0 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-300 active:bg-gray-300 transition-colors duration-200 flex items-center justify-center outline-none"
-                      aria-label="User menu"
-                    >
-                      <User className="w-5 h-5 text-gray-700" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <div className="px-3 py-3 border-b border-border">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {user?.email}
-                        </p>
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="absolute inset-0 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-300 active:bg-gray-300 transition-colors duration-200 flex items-center justify-center outline-none"
+                        aria-label="User menu"
+                      >
+                        <User className="w-5 h-5 text-gray-700" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <div className="px-3 py-3 border-b border-border">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium text-foreground">
+                            {user?.firstName} {user?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {user?.email}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <Link href="/settings">
-                      <DropdownMenuItem>
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
+                      {/* NEW: Profile Settings Menu Item */}
+                      <Link href="/profile">
+                        <DropdownMenuItem>
+                          <UserCog className="mr-2 h-4 w-4" />
+                          Profile Settings
+                        </DropdownMenuItem>
+                      </Link>
+                      <Link href="/settings">
+                        <DropdownMenuItem>
+                          <Settings className="mr-2 h-4 w-4" />
+                          Configuration Settings
+                        </DropdownMenuItem>
+                      </Link>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
                       </DropdownMenuItem>
-                    </Link>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               )}
             </div>
           )}
@@ -249,13 +251,23 @@ export function Navbar() {
                       </Button>
                     </Link>
                   )}
+                  {/* NEW: Profile Settings for Mobile */}
+                  <Link href="/profile" className="block">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-muted-foreground hover:text-foreground"
+                    >
+                      <UserCog className="mr-2 h-4 w-4" />
+                      Profile Settings
+                    </Button>
+                  </Link>
                   <Link href="/settings" className="block">
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-muted-foreground hover:text-foreground"
                     >
                       <Settings className="mr-2 h-4 w-4" />
-                      Settings
+                      Configuration Settings
                     </Button>
                   </Link>
                   <Button

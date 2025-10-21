@@ -24,11 +24,11 @@ const setOtpForUser = async (user: User) => {
   await storage.updateUser(user.id, {
     otpHash,
     otpExpires,
-    otpAttempts: 0, // Reset attempts on new OTP
+    otpAttempts: 0,
     lastOtpSentAt: new Date(),
   });
 
-  return otp; // Return plaintext OTP to be emailed
+  return otp;
 };
 
 export const signup = async (req: Request, res: Response) => {
@@ -41,11 +41,9 @@ export const signup = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(userData.password, AUTH_CONFIG.BCRYPT_ROUNDS);
     const user = await storage.createUser({ ...userData, password: hashedPassword });
 
-    // Checklist 1: Generate and store hashed OTP in DB
     const otp = await setOtpForUser(user);
     await emailService.sendVerificationEmail(user.email, otp);
 
-    // Store unverified email in session to link verification attempts
     req.session.unverifiedEmail = user.email;
 
     return res.status(201).json({
@@ -62,7 +60,6 @@ export const verifyEmail = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
 
-    // Ensure the session is trying to verify the correct email
     if (req.session.unverifiedEmail !== email) {
       return res.status(400).json({ success: false, message: "Verification session mismatch." });
     }
@@ -72,7 +69,6 @@ export const verifyEmail = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "No pending verification found." });
     }
 
-    // Checklist 1: Rate limit attempts and check expiry from DB
     if (user.otpAttempts >= AUTH_CONFIG.MAX_OTP_ATTEMPTS) {
       return res.status(429).json({ success: false, message: "Too many attempts. Please request a new code." });
     }
@@ -80,14 +76,12 @@ export const verifyEmail = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "OTP has expired. Please request a new one." });
     }
 
-    // Checklist 1: Use bcrypt to compare OTP
     const isMatch = await bcrypt.compare(otp, user.otpHash);
     if (!isMatch) {
       await storage.updateUser(user.id, { otpAttempts: (user.otpAttempts || 0) + 1 });
       return res.status(400).json({ success: false, message: "Invalid OTP." });
     }
 
-    // Success: Invalidate OTP and mark user as verified
     const updatedUser = await storage.updateUser(user.id, {
       isVerified: true,
       otpHash: undefined,
@@ -96,11 +90,9 @@ export const verifyEmail = async (req: Request, res: Response) => {
     });
     if (!updatedUser) throw new Error("Failed to update user verification status");
 
-    // Clear session and log in
     req.session.unverifiedEmail = undefined;
     req.session.userId = updatedUser.id;
     
-    // Checklist 2: Send verification success email
     await emailService.sendVerificationSuccessEmail(updatedUser.email);
     
     const { password, ...userWithoutPassword } = updatedUser;
@@ -117,14 +109,12 @@ export const resendOtp = async (req: Request, res: Response) => {
     const user = await storage.getUserByEmail(email);
 
     if (!user) {
-      // Do not leak user existence
       return res.json({ success: true, message: "If an account exists, a new OTP has been sent." });
     }
     if (user.isVerified) {
       return res.status(400).json({ success: false, message: "Account is already verified." });
     }
 
-    // Checklist 1: Implement resend cooldown
     if (user.lastOtpSentAt) {
       const cooldown = AUTH_CONFIG.OTP_RESEND_COOLDOWN_SECONDS * 1000;
       const timeSinceLast = Date.now() - user.lastOtpSentAt.getTime();
@@ -136,7 +126,7 @@ export const resendOtp = async (req: Request, res: Response) => {
     const otp = await setOtpForUser(user);
     await emailService.sendVerificationEmail(user.email, otp);
 
-    req.session.unverifiedEmail = user.email; // Refresh session link
+    req.session.unverifiedEmail = user.email;
 
     return res.json({ success: true, message: "A new OTP has been sent to your email." });
   } catch (err) {
@@ -153,7 +143,6 @@ export const login = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
-    // Checklist 4: Block login if not verified (already implemented)
     if (!user.isVerified) {
       return res.status(403).json({ success: false, message: "Please verify your email address." });
     }
@@ -212,7 +201,6 @@ export const changePassword = async (req: Request, res: Response) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, AUTH_CONFIG.BCRYPT_ROUNDS);
     await storage.updateUser(userId, { password: hashedNewPassword });
 
-    // Checklist 2 & 5: Send password changed confirmation
     await emailService.sendPasswordChangedConfirmation(user.email);
 
     return res.json({ success: true, message: "Password changed successfully." });
@@ -230,17 +218,12 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     if (user) {
       const resetToken = crypto.randomBytes(32).toString("hex");
-      // Checklist 3 & 5: Hash token before saving to DB
       const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-      console.log("Password Reset Hours:", AUTH_CONFIG.PASSWORD_RESET_EXPIRATION_HOURS);
-
       const resetPasswordExpires = new Date(Date.now() + AUTH_CONFIG.PASSWORD_RESET_EXPIRATION_HOURS * 60 * 60 * 1000);
-      console.log("Calculated Expiration (Full Object):", resetPasswordExpires.toISOString());
 
       await storage.updateUser(user.id, { resetPasswordToken, resetPasswordExpires });
       await emailService.sendPasswordResetEmail(user.email, resetToken);
     }
-    // Checklist 3: Do not leak user existence (already implemented)
     return res.json({ success: true, message: successMessage });
   } catch (err) {
     console.error("Forgot password error:", err);
@@ -256,7 +239,6 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
     }
 
-    // Checklist 3 & 5: Hash incoming token to match the one in the DB
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
     const user = await storage.getUserByResetToken(hashedToken);
 
@@ -265,7 +247,6 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, AUTH_CONFIG.BCRYPT_ROUNDS);
-    // Checklist 3 & 5: Invalidate token after use
     await storage.updateUser(user.id, {
       password: hashedPassword,
       resetPasswordToken: undefined,
@@ -281,29 +262,155 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-// ... (updateProfile function remains the same)
+/**
+ * GET /api/auth/profile - Get user profile
+ */
+export const getProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { password, otpHash, resetPasswordToken, ...userProfile } = user;
+    return res.json({ success: true, data: userProfile });
+  } catch (err) {
+    console.error("Get profile error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch profile" });
+  }
+};
+
+/**
+ * PATCH /api/auth/profile - Update user profile information
+ */
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId!;
-    const { firstName, lastName, companyName } = req.body;
-    const updateData: { [key: string]: any } = {};
-    if (firstName) updateData.firstName = firstName;
-    if (lastName) updateData.lastName = lastName;
-    if (companyName) updateData.companyName = companyName;
+    const { firstName, lastName, companyName, email } = req.body;
 
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ success: false, message: "No update data provided." });
+    // Validation
+    if (!firstName?.trim() || !lastName?.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "First name and last name are required." 
+      });
+    }
+
+    const currentUser = await storage.getUser(userId);
+    if (!currentUser) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    const updateData: Partial<User> = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+    };
+
+    if (companyName !== undefined) {
+      updateData.companyName = companyName.trim() || undefined;
+    }
+
+    // Handle email change separately for security
+    if (email && email.toLowerCase().trim() !== currentUser.email) {
+      const newEmail = email.toLowerCase().trim();
+      const existingUser = await storage.getUserByEmail(newEmail);
+      if (existingUser) {
+        return res.status(409).json({ 
+          success: false, 
+          message: "Email already in use by another account." 
+        });
+      }
+      
+      updateData.email = newEmail;
+      updateData.isVerified = false; // Require re-verification
+      
+      // Generate and send verification OTP to new email
+      const userWithNewEmail = { ...currentUser, email: newEmail };
+      const otp = await setOtpForUser(userWithNewEmail as User);
+      await emailService.sendVerificationEmail(newEmail, otp);
     }
 
     const updatedUser = await storage.updateUser(userId, updateData);
+    
     if (!updatedUser) {
       return res.status(404).json({ success: false, message: "User not found." });
     }
 
-    const { password, ...userWithoutPassword } = updatedUser;
-    return res.json({ success: true, data: userWithoutPassword });
+    const { password, otpHash, resetPasswordToken, ...userProfile } = updatedUser;
+    
+    return res.json({ 
+      success: true, 
+      message: email && email !== currentUser.email 
+        ? "Profile updated. Please verify your new email address."
+        : "Profile updated successfully.",
+      data: userProfile 
+    });
   } catch (err) {
     console.error("Update profile error:", err);
     return res.status(500).json({ success: false, message: "Failed to update profile." });
+  }
+};
+
+/**
+ * DELETE /api/auth/account - Delete user account with password confirmation
+ */
+export const deleteAccount = async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const { password, confirmText } = req.body;
+
+    // Require password confirmation
+    if (!password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Password is required to delete your account." 
+      });
+    }
+
+    // Require explicit confirmation text
+    if (confirmText !== "DELETE") {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please type "DELETE" to confirm account deletion.' 
+      });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    // Verify password
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Incorrect password." 
+      });
+    }
+
+    // Delete user (cascade delete will handle related data)
+    await storage.deleteUser(userId);
+
+    // Send account deletion confirmation email
+    await emailService.sendAccountDeletionConfirmation(user.email);
+
+    // Destroy session
+    req.session.destroy(() => {
+      res.clearCookie("connect.sid");
+    });
+
+    return res.json({ 
+      success: true, 
+      message: "Your account has been permanently deleted." 
+    });
+  } catch (err) {
+    console.error("Delete account error:", err);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to delete account. Please try again." 
+    });
   }
 };

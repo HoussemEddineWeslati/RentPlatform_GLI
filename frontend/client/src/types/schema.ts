@@ -1,12 +1,22 @@
 // src/types/schema.ts
+import { z } from "zod";
 export type User = {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
+  companyName?: string | null;  // ADD THIS
+  isVerified?: boolean;          // ADD THIS
   createdAt?: Date;
+  // Add other fields if needed
+  otpHash?: string | null;
+  otpExpires?: Date | null;
+  otpAttempts?: number;
+  lastOtpSentAt?: Date | null;
+  resetPasswordToken?: string | null;
+  resetPasswordExpires?: Date | null;
 };
-import { z } from "zod";
+
 // =================================================================================
 // USER SCHEMA
 // =================================================================================

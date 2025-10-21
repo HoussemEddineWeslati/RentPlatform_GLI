@@ -1,4 +1,5 @@
-// src/App.tsx
+// src/App.tsx - UPDATED VERSION
+
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Route, Switch, useLocation, useRoute } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
@@ -23,6 +24,7 @@ import LandlordPropertiesPage from "@/pages/landlords/[id]/properties";
 import LandlordTenantsPage from "@/pages/landlords/[id]/tenants";
 import PropertyDetailPage from "@/pages/landlords/[id]/properties/[propertyId]";
 import SettingsPage from "@/pages/settings";
+import ProfilePage from "@/pages/profile"; // NEW IMPORT
 
 // Authentication-related routes
 import Verify from "@/pages/verify";
@@ -35,17 +37,14 @@ function AppRoutes() {
   const [isResetPasswordRoute] = useRoute("/reset-password/:token");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Track sidebar state
   useEffect(() => {
     const checkSidebarState = () => {
       const saved = localStorage.getItem("sidebar-collapsed");
       setSidebarCollapsed(saved ? JSON.parse(saved) : false);
     };
-
     checkSidebarState();
     window.addEventListener("storage", checkSidebarState);
     const interval = setInterval(checkSidebarState, 100);
-
     return () => {
       window.removeEventListener("storage", checkSidebarState);
       clearInterval(interval);
@@ -59,10 +58,8 @@ function AppRoutes() {
     "/verify",
     "/forgot-password",
   ];
-
   const isFullPageLayout =
     noSidebarPaths.includes(location) || isResetPasswordRoute;
-
   const showSidebar = isAuthenticated && !isFullPageLayout;
 
   return (
@@ -74,9 +71,7 @@ function AppRoutes() {
           showSidebar && (sidebarCollapsed ? "lg:ml-20" : "lg:ml-64")
         )}
       >
-        {/* Spacer for mobile navbar */}
         <div className="h-16" />
-        
         <Switch>
           {isLoading ? (
             <Route>
@@ -123,6 +118,8 @@ function AppRoutes() {
                   />
                   <Route path="/quote" component={Quote} />
                   <Route path="/settings" component={SettingsPage} />
+                  {/* NEW: Profile Route */}
+                  <Route path="/profile" component={ProfilePage} />
                 </>
               )}
             </>

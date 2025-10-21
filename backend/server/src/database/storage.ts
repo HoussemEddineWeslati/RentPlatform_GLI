@@ -38,6 +38,7 @@ export interface IStorage {
   getUserByResetToken(token: string): Promise<User | undefined>; // NEW
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<User>): Promise<User | undefined>; // NEW
+  deleteUser(id: string): Promise<boolean>;
 
   // Landlord operations
   getLandlords(userId: string): Promise<Landlord[]>;
@@ -124,7 +125,19 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated || undefined;
   }
-
+  /**
+   * Permanently delete a user account
+   * Cascade delete will handle all related data (landlords, properties, tenants, etc.)
+   */
+  async deleteUser(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(users).where(eq(users.id, id));
+      return result.rowCount !== null && result.rowCount > 0;
+    } catch (err) {
+      console.error("Delete user error:", err);
+      throw new Error("Failed to delete user account");
+    }
+  }
   // Landlord operations
   async getLandlords(userId: string): Promise<Landlord[]> {
     return await db.select().from(landlords).where(eq(landlords.userId, userId));
