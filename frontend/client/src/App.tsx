@@ -155,6 +155,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        
         {/* 2. WRAP YOUR NAVBAR AND ROUTES */}
         <SiteGuard>
           <Navbar />
