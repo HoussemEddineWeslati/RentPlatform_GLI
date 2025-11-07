@@ -1,5 +1,4 @@
-// src/components/navbar/index.tsx - UPDATED VERSION
-
+// src/components/navbar/index.tsx - UPDATE THIS FILE TOO!
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +14,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// ✅ IMPORT YOUR LOGO HERE TOO
+import shieldLogo from "@/assets/logo/shield-logo.png";
 
 export function Navbar() {
   const [location, navigate] = useLocation();
@@ -85,7 +86,13 @@ export function Navbar() {
               href="/"
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
-              <Shield className="text-primary h-8 w-8" />
+              {/* ✅ REPLACE THE SHIELD ICON WITH YOUR PNG HERE */}
+              <img 
+                src={shieldLogo} 
+                alt="GLI Pro Logo" 
+                className="h-8 w-8 object-contain"
+                loading="eager"
+              />
               <span className="text-xl font-bold text-foreground">GLI Pro</span>
             </Link>
           )}
@@ -99,7 +106,7 @@ export function Navbar() {
               <div className="flex items-center gap-4">
                 {location !== "/dashboard" && (
                   <Link href="/dashboard">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="hover:bg-gray-700 hover:text-white hover:border-gray-700">
                       Dashboard
                     </Button>
                   </Link>
@@ -108,10 +115,10 @@ export function Navbar() {
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="absolute inset-0 w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-300 active:bg-gray-300 transition-colors duration-200 flex items-center justify-center outline-none"
+                        className="absolute inset-0 w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-700 active:bg-gray-700 transition-colors duration-200 flex items-center justify-center outline-none group"
                         aria-label="User menu"
                       >
-                        <User className="w-6 h-6 text-gray-700" />
+                        <User className="w-6 h-6 text-gray-700 group-hover:text-white group-active:text-white transition-colors" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -125,15 +132,14 @@ export function Navbar() {
                           </p>
                         </div>
                       </div>
-                      {/* NEW: Profile Settings Menu Item */}
                       <Link href="/profile">
-                        <DropdownMenuItem className="cursor-pointer">
+                        <DropdownMenuItem className="cursor-pointer hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white">
                           <UserCog className="mr-2 h-4 w-4" />
                           <span>Profile Settings</span>
                         </DropdownMenuItem>
                       </Link>
                       <Link href="/settings">
-                        <DropdownMenuItem className="cursor-pointer">
+                        <DropdownMenuItem className="cursor-pointer hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white">
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Configuration Settings</span>
                         </DropdownMenuItem>
@@ -142,7 +148,7 @@ export function Navbar() {
                       <DropdownMenuItem
                         onClick={handleLogout}
                         disabled={logoutMutation.isPending}
-                        className="cursor-pointer text-destructive focus:text-destructive"
+                        className="cursor-pointer hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white"
                       >
                         <LogOut className="h-4 w-4 mr-2" />
                         {logoutMutation.isPending ? "Logging out..." : "Logout"}
@@ -192,10 +198,10 @@ export function Navbar() {
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="absolute inset-0 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-300 active:bg-gray-300 transition-colors duration-200 flex items-center justify-center outline-none"
+                        className="absolute inset-0 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-700 active:bg-gray-700 transition-colors duration-200 flex items-center justify-center outline-none group"
                         aria-label="User menu"
                       >
-                        <User className="w-5 h-5 text-gray-700" />
+                        <User className="w-5 h-5 text-gray-700 group-hover:text-white group-active:text-white transition-colors" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -209,21 +215,20 @@ export function Navbar() {
                           </p>
                         </div>
                       </div>
-                      {/* NEW: Profile Settings Menu Item */}
                       <Link href="/profile">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem className="hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white">
                           <UserCog className="mr-2 h-4 w-4" />
                           Profile Settings
                         </DropdownMenuItem>
                       </Link>
                       <Link href="/settings">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem className="hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white">
                           <Settings className="mr-2 h-4 w-4" />
                           Configuration Settings
                         </DropdownMenuItem>
                       </Link>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
+                      <DropdownMenuItem onClick={handleLogout} className="hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white">
                         <LogOut className="mr-2 h-4 w-4" />
                         Logout
                       </DropdownMenuItem>
@@ -246,16 +251,15 @@ export function Navbar() {
                   </div>
                   {location !== "/dashboard" && (
                     <Link href="/dashboard" className="block">
-                      <Button variant="outline" className="w-full justify-start mb-2">
+                      <Button variant="outline" className="w-full justify-start mb-2 hover:bg-gray-700 hover:text-white hover:border-gray-700">
                         Dashboard
                       </Button>
                     </Link>
                   )}
-                  {/* NEW: Profile Settings for Mobile */}
                   <Link href="/profile" className="block">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-muted-foreground hover:text-foreground"
+                      className="w-full justify-start text-muted-foreground hover:text-white hover:bg-gray-700"
                     >
                       <UserCog className="mr-2 h-4 w-4" />
                       Profile Settings
@@ -264,7 +268,7 @@ export function Navbar() {
                   <Link href="/settings" className="block">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-muted-foreground hover:text-foreground"
+                      className="w-full justify-start text-muted-foreground hover:text-white hover:bg-gray-700"
                     >
                       <Settings className="mr-2 h-4 w-4" />
                       Configuration Settings
@@ -275,7 +279,7 @@ export function Navbar() {
                     size="sm"
                     onClick={handleLogout}
                     disabled={logoutMutation.isPending}
-                    className="w-full justify-start text-muted-foreground hover:text-foreground"
+                    className="w-full justify-start text-muted-foreground hover:text-white hover:bg-gray-700"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     {logoutMutation.isPending ? "Logging out..." : "Logout"}

@@ -32,6 +32,7 @@
     "express-session": "^1.18.2",
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
+    "multer": "^2.0.2",
     "nanoid": "^5.1.5",
     "nodemailer": "^7.0.9",
     "openid-client": "^6.8.0",

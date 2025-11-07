@@ -129,6 +129,7 @@ export default function LandlordsPage() {
             />
           </div>
           <Button
+            variant = "slate"
             onClick={() => {
               setSelectedLandlord(null);
               setIsFormOpen(true);

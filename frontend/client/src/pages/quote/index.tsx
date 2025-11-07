@@ -1,4 +1,4 @@
-// client/src/pages/quote/index.tsx
+// client/src/pages/quote/index.tsx 
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,10 @@ import { useRisk } from "@/hooks/useRisk";
 import { downloadRiskReport } from "@/hooks/useRiskReport";
 import { riskFormSchema, type RiskFormData } from "@/types/schema/riskSchema";
 import type { RiskReportRequest, RiskResponse } from "@/types/risk";
-import { ArrowLeft, ArrowRight, Calculator, FileDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calculator, FileDown, Shield } from "lucide-react";
+import { PolicyForm } from "@/components/policy-form/policy-form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast"; // ADD THIS IMPORT
 import {
   Select,
   SelectTrigger,
@@ -35,7 +38,7 @@ const SECTION_TITLES = [
 
 export default function Quote() {
   const riskMutation = useRisk();
-
+  const { toast } = useToast(); // ADD THIS LINE
   const form = useForm<RiskFormData>({
     resolver: zodResolver(riskFormSchema),
     defaultValues: {
@@ -72,7 +75,8 @@ export default function Quote() {
   });
 
   const [result, setResult] = React.useState<null | RiskResponse>(null);
-  const [step, setStep] = React.useState<number>(-1); // -1 = landing, 0..4 = sections
+  const [step, setStep] = React.useState<number>(-1);
+  const [isPolicyDialogOpen, setIsPolicyDialogOpen] = React.useState(false); // ADD THIS STATE
 
   const employmentOptions = [
     { label: "Permanent", value: "Permanent" },
@@ -94,7 +98,6 @@ export default function Quote() {
 
   const onSubmit = (data: RiskFormData) => {
     const payload: RiskReportRequest = { ...data };
-
     riskMutation.mutate(payload, {
       onSuccess: (res) => setResult(res.risk),
     });
@@ -106,7 +109,7 @@ export default function Quote() {
       case 0:
         return (
           <CollapsibleCard
-            title="Section 1 — Personal Info"
+            title="Section 1 – Personal Info"
             subtitle="Identification and basic demographic"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -167,7 +170,7 @@ export default function Quote() {
       case 1:
         return (
           <CollapsibleCard
-            title="Section 2 — Employment & Income"
+            title="Section 2 – Employment & Income"
             subtitle="Work and earnings"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -202,7 +205,7 @@ export default function Quote() {
       case 2:
         return (
           <CollapsibleCard
-            title="Section 3 — Financial Obligations"
+            title="Section 3 – Financial Obligations"
             subtitle="Debts and reserves"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -230,7 +233,7 @@ export default function Quote() {
       case 3:
         return (
           <CollapsibleCard
-            title="Section 4 — Housing & Rental History"
+            title="Section 4 – Housing & Rental History"
             subtitle="Rent, guarantor and references"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -301,50 +304,48 @@ export default function Quote() {
                 register={form.register}
               />
               <div>
-              <Label htmlFor="propertyType">Property Type</Label>
-              <Select
-                onValueChange={(v) => form.setValue("propertyType", v)}
-                defaultValue={form.getValues("propertyType")}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="villa">Villa</SelectItem>
-                  <SelectItem value="apartment">Apartment</SelectItem>
-                  <SelectItem value="house">House</SelectItem>
-                  <SelectItem value="studio">Studio</SelectItem>
-                </SelectContent>
-              </Select>
-              {form.formState.errors.propertyType && (
-                <p className="text-sm text-destructive mt-1">
-                  {form.formState.errors.propertyType.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="propertyStatus">Property Status</Label>
-              <Select
-                onValueChange={(v) => form.setValue("propertyStatus", v)}
-                defaultValue={form.getValues("propertyStatus")}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="available">Available</SelectItem>
-                  <SelectItem value="rented">Rented</SelectItem>
-                  <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
-                </SelectContent>
-              </Select>
-              {form.formState.errors.propertyStatus && (
-                <p className="text-sm text-destructive mt-1">
-                  {form.formState.errors.propertyStatus.message}
-                </p>
-              )}
-            </div>
-
+                <Label htmlFor="propertyType">Property Type</Label>
+                <Select
+                  onValueChange={(v) => form.setValue("propertyType", v)}
+                  defaultValue={form.getValues("propertyType")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="villa">Villa</SelectItem>
+                    <SelectItem value="apartment">Apartment</SelectItem>
+                    <SelectItem value="house">House</SelectItem>
+                    <SelectItem value="studio">Studio</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.propertyType && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.propertyType.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="propertyStatus">Property Status</Label>
+                <Select
+                  onValueChange={(v) => form.setValue("propertyStatus", v)}
+                  defaultValue={form.getValues("propertyStatus")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="rented">Rented</SelectItem>
+                    <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.propertyStatus && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.propertyStatus.message}
+                  </p>
+                )}
+              </div>
               <TextField
                 label="Lease Start Date"
                 id="leaseStartDate"
@@ -363,7 +364,7 @@ export default function Quote() {
       case 4:
         return (
           <CollapsibleCard
-            title="Section 5 — Other Factors"
+            title="Section 5 – Other Factors"
             subtitle="Optional / supporting info"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -424,7 +425,6 @@ export default function Quote() {
     }
   }
 
-  // Progress bar value
   const progressValue = step >= 0 ? ((step + 1) / SECTION_TITLES.length) * 100 : 0;
 
   return (
@@ -442,7 +442,7 @@ export default function Quote() {
                 interactive quote. You'll fill out 5 quick sections, see your
                 progress, and get instant results.
               </p>
-              <Button size="lg" onClick={handleStart}>
+              <Button variant="slate" size="lg" onClick={handleStart}>
                 Start Quote
               </Button>
             </div>
@@ -466,13 +466,13 @@ export default function Quote() {
                   <ArrowLeft className="mr-2" /> Back
                 </Button>
                 {step < 4 ? (
-                  <Button onClick={handleNext}>
+                  <Button variant="slate" onClick={handleNext}>
                     Next <ArrowRight className="ml-2" />
                   </Button>
                 ) : (
                   <Button
-                    variant="default"
-                    className="w-1/2"
+                    variant="slate"
+                    size="sm"
                     onClick={form.handleSubmit(onSubmit)}
                     disabled={riskMutation.isPending}
                   >
@@ -493,7 +493,7 @@ export default function Quote() {
           {result && (
             <div className="animate-fade-in mt-8">
               <RiskResultCard result={result} />
-              <div className="flex justify-center mt-6 gap-4">
+              <div className="flex justify-center mt-6 gap-4 flex-wrap">
                 <Button variant="outline" onClick={handleRestart}>
                   Start New Quote
                 </Button>
@@ -506,12 +506,24 @@ export default function Quote() {
                 >
                   Download PDF <FileDown className="ml-2" />
                 </Button>
+
+                {/* Create Policy Button - Only show if accepted or conditionally accepted */}
+                {(result.decision === "accept" || result.decision === "conditional_accept") && (
+                  <Button
+                    variant="default"
+                    onClick={() => setIsPolicyDialogOpen(true)}
+                    className="bg-primary"
+                  >
+                    <Shield className="mr-2 h-4 w-4" />
+                    Create Policy
+                  </Button>
+                )}
               </div>
             </div>
           )}
         </Card>
 
-        {/* Guidance card always visible */}
+        {/* Guidance card */}
         <div className="max-w-2xl mx-auto mt-8">
           <Card>
             <div className="p-4">
@@ -525,6 +537,27 @@ export default function Quote() {
           </Card>
         </div>
       </div>
+
+      {/* Policy Creation Dialog */}
+      <Dialog open={isPolicyDialogOpen} onOpenChange={setIsPolicyDialogOpen}>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Insurance Policy</DialogTitle>
+          </DialogHeader>
+          <PolicyForm
+            riskScore={result?.safetyScore}
+            decision={result?.decision}
+            onSuccess={() => {
+              setIsPolicyDialogOpen(false);
+              toast({
+                title: "Policy Created",
+                description: "The insurance policy has been created successfully.",
+              });
+            }}
+            onCancel={() => setIsPolicyDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

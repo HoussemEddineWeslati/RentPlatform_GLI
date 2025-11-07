@@ -1,4 +1,4 @@
-//src\pages\landlords\[id]\properties.tsx :
+//src/pages/landlords/[id]/tenants.tsx
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
@@ -6,7 +6,7 @@ import { Tenant } from "@/types/schema";
 import { Link, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowLeft, Trash2, Edit, User, Mail, Calendar, CircleDollarSign, Search
+  ArrowLeft, Trash2, Edit, User, Mail, Calendar, CircleDollarSign, Search, PlusCircle
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,6 @@ type TenantWithProperty = Tenant & {
 export default function LandlordTenantsPage() {
   const [, params] = useRoute("/landlords/:id/tenants");
   const landlordId = params?.id;
-
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -93,15 +92,28 @@ export default function LandlordTenantsPage() {
         <div className="pl-4">
           <Link href={`/landlords/${landlordId}`}>
             <Button variant="outline" className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Properties
-        </Button>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Landlord
+            </Button>
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">Tenants of {landlord?.name}</h1>
           <p className="text-muted-foreground">A list of all tenants across all properties.</p>
         </div>
+        {/* Add Tenant Button */}
+        <div className="pr-4">
+          <Button 
+            variant="slate" 
+            onClick={() => { 
+              setSelectedTenant(null); 
+              setIsFormOpen(true); 
+            }}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Tenant
+          </Button>
+        </div>
       </div>
-      
+
       <Card className="mb-8">
         <CardContent className="p-4">
             <div className="relative max-w-sm">
@@ -123,6 +135,12 @@ export default function LandlordTenantsPage() {
                 <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">{tenants.length === 0 ? "This Landlord Has No Tenants" : "No Matching Tenants"}</h3>
                 <p className="text-muted-foreground mb-4">{tenants.length === 0 ? "Tenants will appear here once they are added to a property." : "Try a different search."}</p>
+                {tenants.length === 0 && (
+                  <Button onClick={() => setIsFormOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add First Tenant
+                  </Button>
+                )}
             </CardContent>
         </Card>
       ) : (
@@ -157,7 +175,13 @@ export default function LandlordTenantsPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{selectedTenant ? "Edit Tenant" : "Add New Tenant"}</DialogTitle></DialogHeader>
-          <TenantForm tenant={selectedTenant} propertyId={selectedTenant?.propertyId!} onSuccess={() => setIsFormOpen(false)} onCancel={() => setIsFormOpen(false)} />
+          <TenantForm 
+            tenant={selectedTenant} 
+            propertyId={selectedTenant?.propertyId} 
+            landlordId={landlordId}
+            onSuccess={() => setIsFormOpen(false)} 
+            onCancel={() => setIsFormOpen(false)} 
+          />
         </DialogContent>
       </Dialog>
 

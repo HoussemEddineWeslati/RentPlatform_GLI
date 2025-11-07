@@ -5,7 +5,7 @@ import { apiRequest } from "@/lib/api";
 import { Landlord } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Users, Mail, Phone, ArrowLeft } from "lucide-react";
+import { Building, Users, Mail, Phone, ArrowLeft,Shield } from "lucide-react";
 
 export default function LandlordDetailPage() {
   const [, params] = useRoute("/landlords/:id");
@@ -40,21 +40,28 @@ export default function LandlordDetailPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mt-6 flex space-x-4">
-            <Link href={`/landlords/${landlordId}/properties`}>
-              <Button>
-                <Building className="mr-2 h-4 w-4" />
-                View Properties ({landlord.propertyCount || 0})
-              </Button>
-            </Link>
-             <Link href={`/landlords/${landlordId}/tenants`}>
-               <Button variant="secondary">
-                 <Users className="mr-2 h-4 w-4" />
-                 View Tenants
-               </Button>
-            </Link>
-          </div>
-        </CardContent>
+        <div className="mt-6 flex flex-wrap gap-4">
+          <Link href={`/landlords/${landlordId}/properties`}>
+            <Button>
+              <Building className="mr-2 h-4 w-4" />
+              View Properties ({landlord.propertyCount || 0})
+            </Button>
+          </Link>
+          <Link href={`/landlords/${landlordId}/tenants`}>
+            <Button variant="secondary">
+              <Users className="mr-2 h-4 w-4" />
+              View Tenants
+            </Button>
+          </Link>
+          {/* NEW: Policies Button */}
+          <Link href={`/landlords/${landlordId}/policies`}>
+            <Button variant="outline">
+              <Shield className="mr-2 h-4 w-4" />
+              View Policies
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
       </Card>
     </div>
   );

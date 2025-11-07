@@ -80,15 +80,14 @@ export const insertTenantSchema = z.object({
   email: z.string().email("Invalid email format"),
   rentAmount: z.coerce.number().positive("Rent must be a positive number"),
   paymentStatus: z.enum(["paid", "pending", "overdue"]),
-  leaseStart: z.string().datetime("Invalid lease start date"),
-  leaseEnd: z.string().datetime("Invalid lease end date"),
+  leaseStart: z.string().min(1, "Lease start date is required"),
+  leaseEnd: z.string().min(1, "Lease end date is required"),
   propertyId: z.string().uuid("A property must be selected"),
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
 });
 
 export type Tenant = z.infer<typeof insertTenantSchema>;
-
 // Quote schemas and types
 export const insertQuoteSchema = z.object({
   userId: z.string(),

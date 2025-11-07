@@ -95,7 +95,7 @@ export function LandlordForm({ landlord, onSuccess, onCancel }: LandlordFormProp
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button variant="slate" type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? "Saving..." : landlord ? "Update Landlord" : "Add Landlord"}
         </Button>
       </div>

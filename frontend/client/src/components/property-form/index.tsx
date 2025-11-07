@@ -165,7 +165,7 @@ export function PropertyForm({
 
       <div className="flex justify-end space-x-3 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button variant="slate" type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? "Saving..." : property ? "Update Property" : "Add Property"}
         </Button>
       </div>

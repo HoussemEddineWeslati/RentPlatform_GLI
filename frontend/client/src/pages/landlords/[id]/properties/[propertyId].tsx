@@ -1,3 +1,4 @@
+// src/pages/landlords/[id]/properties/[propertyId].tsx
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useRoute } from "wouter";
@@ -99,7 +100,7 @@ export default function PropertyDetailPage() {
 
         {/* Add Tenant button shifted left */}
         <div className="pr-4">
-          <Button onClick={() => { setSelectedTenant(null); setIsFormOpen(true); }}>
+          <Button variant="slate" onClick={() => { setSelectedTenant(null); setIsFormOpen(true); }}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Tenant
           </Button>
