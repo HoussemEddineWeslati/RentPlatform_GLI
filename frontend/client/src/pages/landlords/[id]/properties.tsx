@@ -87,7 +87,7 @@ export default function LandlordPropertiesPaPage() {
               <h1 className="text-3xl font-bold tracking-tight">Properties for {landlord?.name}</h1>
               <p className="text-muted-foreground">Manage all properties for this landlord.</p>
           </div>
-          <Button onClick={() => { setSelectedProperty(null); setIsFormOpen(true); }}>
+          <Button variant="slate" onClick={() => { setSelectedProperty(null); setIsFormOpen(true); }}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Property
           </Button>

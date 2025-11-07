@@ -158,6 +158,18 @@ export const claims = pgTable("claims", {
   updatedAt: timestamp("updated_at",{ withTimezone: true }).defaultNow(),
 });
 
+export const evidenceFiles = pgTable("evidence_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  claimId: varchar("claim_id")
+    .notNull()
+    .references(() => claims.id, { onDelete: "cascade" }),
+  filename: varchar("filename").notNull(),
+  originalName: varchar("original_name").notNull(),
+  size: integer("size").notNull(),
+  mimeType: varchar("mime_type").notNull(),
+  path: varchar("path").notNull(),
+  uploadedAt: timestamp("uploaded_at", { withTimezone: true }).defaultNow(),
+});
 
 /**
  * Insert schemas
@@ -275,3 +287,4 @@ export type Policy = typeof policies.$inferSelect;
 export type InsertPolicy = z.infer<typeof insertPolicySchema>;
 export type Claim = typeof claims.$inferSelect;
 export type InsertClaim = z.infer<typeof insertClaimSchema>;
+export type EvidenceFile = typeof evidenceFiles.$inferSelect;

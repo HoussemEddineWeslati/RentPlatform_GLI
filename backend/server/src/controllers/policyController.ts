@@ -4,6 +4,7 @@ import { storage } from "../database/storage.js";
 import type { AuthRequest } from "../types/custom.js";
 import { insertPolicySchema } from "../database/schema.js";
 import { generatePolicyPDF } from "../services/policyPdfGenerator.js";
+
 /**
  * Get all policies for the authenticated user.
  */
@@ -11,6 +12,7 @@ export const getAllPolicies = async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.session.userId!;
         const policies = await storage.getAllPolicies(userId);
+        // ✅ FIX: Return consistent structure with success flag
         res.json({ success: true, data: policies });
     } catch (err) {
         console.error("Get all policies error:", err);
@@ -48,6 +50,7 @@ export const getPoliciesForLandlord = async (req: AuthRequest, res: Response) =>
         return res.status(404).json({ success: false, message: "Landlord not found or access denied." });
     }
     const policies = await storage.getPoliciesByLandlord(userId, landlordId);
+    // ✅ FIX: Return consistent structure
     res.json({ success: true, data: policies });
   } catch (err) {
     console.error("Get policies by landlord error:", err);
@@ -67,6 +70,7 @@ export const getPoliciesForTenant = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ success: false, message: "Tenant not found or access denied." });
         }
         const policies = await storage.getPoliciesByTenant(userId, tenantId);
+        // ✅ FIX: Return consistent structure
         res.json({ success: true, data: policies });
     } catch (err) {
         console.error("Get policies by tenant error:", err);
@@ -81,7 +85,6 @@ export const createPolicy = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.session.userId!;
     const policyData = insertPolicySchema.parse({ ...req.body, userId });
-
     const [landlord, property, tenant] = await Promise.all([
         storage.getLandlord(policyData.landlordId),
         storage.getProperty(policyData.propertyId),
@@ -90,7 +93,6 @@ export const createPolicy = async (req: AuthRequest, res: Response) => {
     if (!landlord || landlord.userId !== userId) return res.status(403).json({ success: false, message: "Invalid landlord." });
     if (!property || property.userId !== userId) return res.status(403).json({ success: false, message: "Invalid property." });
     if (!tenant || tenant.userId !== userId) return res.status(403).json({ success: false, message: "Invalid tenant." });
-    
     const newPolicy = await storage.createPolicy(policyData);
     res.status(201).json({ success: true, data: newPolicy });
   } catch (err: any) {
@@ -107,7 +109,6 @@ export const updatePolicyStatus = async (req: AuthRequest, res: Response) => {
         const userId = req.session.userId!;
         const { id } = req.params;
         const { status } = req.body;
-
         if (!status || !['active', 'expired', 'cancelled'].includes(status)) {
             return res.status(400).json({ success: false, message: "Invalid status provided." });
         }
@@ -152,16 +153,12 @@ export const generatePolicyDocument = async (req: AuthRequest, res: Response) =>
         const userId = req.session.userId!;
         const { id } = req.params;
         const policyData = await storage.getPolicyById(id, userId);
-
         if (!policyData) {
             return res.status(404).json({ success: false, message: "Policy not found or access denied." });
         }
-
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename="policy-${policyData.policy.policyNumber}.pdf"`);
-
         generatePolicyPDF(policyData, res);
-
     } catch (err: any) {
         console.error("Policy PDF generation error:", err);
         res.status(500).json({ success: false, message: "Failed to generate policy document." });

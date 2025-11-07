@@ -15,7 +15,7 @@ const InfoRow = ({ icon: Icon, label, value }: {
   label: string; 
   value: React.ReactNode 
 }) => (
-  <div className="flex items-start py-4 border-b last:border-b-0">
+  <div className="flex items-start py-4 border-b last:border-b-0 px-4">
     <div className="flex items-center min-w-[200px]">
       <Icon className="h-4 w-4 text-muted-foreground mr-2" />
       <span className="text-sm font-medium text-muted-foreground">{label}</span>
@@ -63,15 +63,18 @@ export function ProfileView({ onEdit }: ProfileViewProps) {
               View your account details and verification status
             </CardDescription>
           </div>
-          <Button onClick={onEdit} className="gap-2">
-            <Edit className="h-4 w-4" />
-            Edit Profile
-          </Button>
-        </div>
+          <Button
+          onClick={onEdit}
+          className="gap-2 bg-slate-500 text-white hover:bg-slate-800 hover:text-white active:bg-slate-900 transition-colors duration-200 shadow-sm hover:shadow-md"
+        >
+          <Edit className="h-4 w-4" />
+          Edit Profile
+        </Button>
+                </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
-                  {/* Account Status */}
+        {/* Account Status */}
         <div className="flex items-center gap-2 p-4 bg-muted/30 rounded-lg">
           <div className="flex-1">
             <p className="text-sm font-medium">Account Status</p>
@@ -135,11 +138,6 @@ export function ProfileView({ onEdit }: ProfileViewProps) {
                     })
                   : "—"
               } 
-            />
-            <InfoRow 
-              icon={User} 
-              label="User ID" 
-              value={<code className="text-xs bg-muted px-2 py-1 rounded">{user.id}</code>} 
             />
           </div>
         </div>

@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Shield,
   Calculator,
   BarChart3,
   Menu,
@@ -12,6 +11,8 @@ import {
   UserSquare,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
+  Shield,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
@@ -19,6 +20,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+// Import your custom logo with eager loading to avoid flickering
+import shieldLogo from "@/assets/logo/shield-logo.png?url";
 
 export function Sidebar() {
   const { isAuthenticated } = useAuth();
@@ -46,6 +50,8 @@ export function Sidebar() {
   const navigation: { name: string; href: string; icon: React.ElementType }[] = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { name: "Landlords", href: "/landlords", icon: UserSquare },
+    { name: "Policies", href: "/policies", icon: Shield },
+    { name: "Claims", href: "/claims", icon: AlertCircle },
     { name: "Risk Calculator", href: "/quote", icon: Calculator },
   ];
 
@@ -59,10 +65,18 @@ export function Sidebar() {
         )}
       >
         <Link href="/" className="flex items-center space-x-2 group">
-          <Shield className={cn(
-            "text-primary transition-all group-hover:scale-110",
-            isCollapsed && !isMobile ? "h-10 w-10" : "h-8 w-8"
-          )} />
+          {/* Custom Shield Logo Image - no fallback to prevent flicker */}
+          <img 
+            src={shieldLogo} 
+            alt="GLI Pro Logo" 
+            loading="eager"
+            decoding="sync"
+            className={cn(
+              "transition-all group-hover:scale-110 object-contain",
+              isCollapsed && !isMobile ? "h-10 w-10" : "h-8 w-8"
+            )}
+            style={{ imageRendering: 'crisp-edges' }}
+          />
           {(!isCollapsed || isMobile) && (
             <span className="text-xl font-bold text-foreground whitespace-nowrap">
               GLI Pro
@@ -77,7 +91,7 @@ export function Sidebar() {
             size="icon"
             onClick={toggleCollapsed}
             className={cn(
-              "h-8 w-8 rounded-full transition-all duration-300 hover:bg-primary/10",
+              "h-8 w-8 rounded-full transition-all duration-300 hover:bg-gray-700 hover:text-white",
               isCollapsed && "absolute -right-3 top-5 bg-white border border-border shadow-md"
             )}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -105,8 +119,8 @@ export function Sidebar() {
                     ? "justify-center p-3"
                     : "justify-start px-4 py-3",
                   isActive
-                    ? "bg-primary/10 text-primary hover:bg-primary/20"
-                    : "text-muted-foreground hover:bg-gray-100 hover:text-foreground"
+                    ? "text-slate-700 font-semibold"
+                    : "text-muted-foreground hover:bg-gray-700 hover:text-white"
                 )}
                 onClick={() => isMobile && setIsMobileOpen(false)}
               >

@@ -1,5 +1,4 @@
-// src/App.tsx - UPDATED VERSION
-
+// src/App.tsx
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Route, Switch, useLocation, useRoute } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
@@ -23,13 +22,24 @@ import LandlordDetailPage from "@/pages/landlords/[id]/index";
 import LandlordPropertiesPage from "@/pages/landlords/[id]/properties";
 import LandlordTenantsPage from "@/pages/landlords/[id]/tenants";
 import PropertyDetailPage from "@/pages/landlords/[id]/properties/[propertyId]";
+import LandlordPoliciesPage from "@/pages/landlords/[id]/policies";
 import SettingsPage from "@/pages/settings";
-import ProfilePage from "@/pages/profile"; // NEW IMPORT
+import ProfilePage from "@/pages/profile";
+
+// Policy Pages
+import PoliciesPage from "@/pages/policies/index";
+import PolicyDetailPage from "@/pages/policies/[id]";
 
 // Authentication-related routes
 import Verify from "@/pages/verify";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password/[token]";
+import ClaimsPage from "@/pages/claims/index";
+import ClaimDetailPage from "@/pages/claims/[id]";
+import LandlordClaimsPage from "@/pages/landlords/[id]/claims";
+
+// 1. IMPORT YOUR NEW SITEGUARD COMPONENT
+import { SiteGuard } from "@/components/siteguard/SiteGuard";
 
 function AppRoutes() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -51,15 +61,8 @@ function AppRoutes() {
     };
   }, []);
 
-  const noSidebarPaths = [
-    "/",
-    "/login",
-    "/signup",
-    "/verify",
-    "/forgot-password",
-  ];
-  const isFullPageLayout =
-    noSidebarPaths.includes(location) || isResetPasswordRoute;
+  const noSidebarPaths = ["/", "/login", "/signup", "/verify", "/forgot-password"];
+  const isFullPageLayout = noSidebarPaths.includes(location) || isResetPasswordRoute;
   const showSidebar = isAuthenticated && !isFullPageLayout;
 
   return (
@@ -93,15 +96,14 @@ function AppRoutes() {
                   <Route path="/signup" component={Signup} />
                   <Route path="/verify" component={Verify} />
                   <Route path="/forgot-password" component={ForgotPassword} />
-                  <Route
-                    path="/reset-password/:token"
-                    component={ResetPassword}
-                  />
+                  <Route path="/reset-password/:token" component={ResetPassword} />
                 </>
               )}
               {isAuthenticated && (
                 <>
                   <Route path="/dashboard" component={Dashboard} />
+
+                  {/* Landlord Routes */}
                   <Route path="/landlords" component={LandlordsPage} />
                   <Route path="/landlords/:id" component={LandlordDetailPage} />
                   <Route
@@ -116,9 +118,26 @@ function AppRoutes() {
                     path="/landlords/:id/properties/:propertyId"
                     component={PropertyDetailPage}
                   />
+                  <Route
+                    path="/landlords/:id/policies"
+                    component={LandlordPoliciesPage}
+                  />
+
+                  {/* Policy Routes */}
+                  <Route path="/policies" component={PoliciesPage} />
+                  <Route path="/policies/:id" component={PolicyDetailPage} />
+
+                  {/* Claim Routes */}
+                  <Route path="/claims" component={ClaimsPage} />
+                  <Route path="/claims/:id" component={ClaimDetailPage} />
+                  <Route
+                    path="/landlords/:id/claims"
+                    component={LandlordClaimsPage}
+                  />
+
+                  {/* Other Routes */}
                   <Route path="/quote" component={Quote} />
                   <Route path="/settings" component={SettingsPage} />
-                  {/* NEW: Profile Route */}
                   <Route path="/profile" component={ProfilePage} />
                 </>
               )}
@@ -136,8 +155,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Navbar />
-        <AppRoutes />
+        {/* 2. WRAP YOUR NAVBAR AND ROUTES */}
+        <SiteGuard>
+          <Navbar />
+          <AppRoutes />
+        </SiteGuard>
       </TooltipProvider>
     </QueryClientProvider>
   );
