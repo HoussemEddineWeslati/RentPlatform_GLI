@@ -25,7 +25,8 @@ export const sessionConfig: SessionOptions = {
     httpOnly: true,
     // Checklist 3: Enforce HTTPS cookies in production. Use 'strict' for better CSRF protection.
     secure: isProd,
-    sameSite: isProd ? "strict" : "lax",
+    // sameSite: isProd ? "strict" : "lax",
+    sameSite: isProd ? "none" : "lax",
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   },
 };
