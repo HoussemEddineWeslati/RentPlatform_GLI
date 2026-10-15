@@ -67,14 +67,14 @@ export default function PolicyDetailPage() {
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  // ✅ Fixed: Handle response structure
+  // Fixed: Handle response structure
   const { data: policyResponse, isLoading } = useQuery({
     queryKey: ["/api/policies", policyId],
     queryFn: () => apiRequest("GET", `/api/policies/${policyId}`),
     enabled: !!policyId,
   });
 
-  // ✅ Extract policy data from response
+  // Extract policy data from response
   const policyData = useMemo((): PolicyDetailResponse | null => {
     if (!policyResponse) return null;
     

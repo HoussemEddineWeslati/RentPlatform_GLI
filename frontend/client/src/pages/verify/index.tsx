@@ -55,7 +55,7 @@ export default function VerifyPage() {
 
       toast({ title: "Success!", description: "Your email has been verified." });
 
-      // FIX: Manually update the user query cache with the response from the verify endpoint.
+      // Manually update the user query cache with the response from the verify endpoint.
       // This immediately updates the application's auth state.
       queryClient.setQueryData(["/api/auth/user"], response);
       

@@ -26,14 +26,14 @@ export default function LandlordPoliciesPage() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // ✅ Fixed: Fetch policies and handle response structure
+  // Fixed: Fetch policies and handle response structure
   const { data: policiesResponse, isLoading } = useQuery({
     queryKey: ["/api/policies/landlord", landlordId],
     queryFn: () => apiRequest("GET", `/api/policies/landlord/${landlordId}`),
     enabled: !!landlordId,
   });
 
-  // ✅ Fixed: Extract policies array from response with proper error handling
+  // Fixed: Extract policies array from response with proper error handling
   const policies = useMemo((): PolicyItem[] => {
     if (!policiesResponse) return [];
     

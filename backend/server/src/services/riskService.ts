@@ -126,7 +126,7 @@ export function computeComponentScores(input: RiskRequest) {
 }
 
 /**
- * REFACTORED: computeSafetyScoreAndPd
+ * computeSafetyScoreAndPd
  * - The `DEFAULT_SCORING_CONFIG` is removed as it's no longer necessary.
  * - We now parse the `scoringConfig` (or an empty object) directly. The updated schema
  * guarantees that `config.weights` and `config.decisionThresholds` will be fully-formed objects.
@@ -134,10 +134,9 @@ export function computeComponentScores(input: RiskRequest) {
  */
 export function computeSafetyScoreAndPd(
   input: RiskRequest,
-  pdMax = 0.25, // Note: This is now superseded by the `pdMax` in the scoring config.
+  _pdMax = 0.25, // kept for compatibility; the configuration's pdMax is used
   scoringConfig?: Partial<ScoringConfig>
 ) {
-  // Zod now handles all default values, including for nested objects, thanks to the schema change.
   const config = scoringConfigSchema.parse(scoringConfig || {});
   const { weights, decisionThresholds } = config;
 
@@ -166,10 +165,9 @@ export function computeSafetyScoreAndPd(
   // Map to 0..100 for readability
   const safetyScore = totalWeight > 0 ? Math.round((rawSum / totalWeight) * 10000) / 100 : 0;
 
-  // PD uses configured pdMax, which now has a reliable default from the schema.
+  // Probability of default scales linearly with the missing share of the score.
   const PD_12m = Math.round((config.pdMax * (1 - safetyScore / 100)) * 10000) / 10000;
 
-  // Decision logic is now cleaner as `decisionThresholds` is guaranteed to exist.
   let decision: "accept" | "conditional_accept" | "decline" = "decline";
   if (PD_12m <= decisionThresholds.acceptPd) {
     decision = "accept";
@@ -177,7 +175,7 @@ export function computeSafetyScoreAndPd(
     decision = "conditional_accept";
   }
 
-  // Explanation heuristics are also cleaner.
+  // Plain-language reasons for the weakest components.
   const explanations: string[] = [];
   if ((scaled.housing / weights.housing) * 100 < 40) explanations.push("Weak housing history or missing guarantor.");
   if ((scaled.employment / weights.employment) * 100 < 40) explanations.push("Employment not stable or low income.");

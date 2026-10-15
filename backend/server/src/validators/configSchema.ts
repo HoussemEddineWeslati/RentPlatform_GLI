@@ -24,13 +24,13 @@ export const decisionThresholdsSchema = z.object({
 });
 
 export const scoringConfigSchema = z.object({
-  // FIX: Added .default({}) to ensure the 'weights' object is always present.
+  // Added .default({}) to ensure the 'weights' object is always present.
   // Zod will parse it against weightsSchema, which applies the defaults for each property.
   weights: weightsSchema.optional().default({}),
 
   pdMax: z.number().positive().optional().default(0.25),
 
-  // FIX: Added .default({}) to ensure the 'decisionThresholds' object is always present.
+  // Added .default({}) to ensure the 'decisionThresholds' object is always present.
   decisionThresholds: decisionThresholdsSchema.optional().default({}),
 
   // optional descriptive name

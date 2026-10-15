@@ -53,7 +53,7 @@ export default function LandlordDetailPage() {
               View Tenants
             </Button>
           </Link>
-          {/* NEW: Policies Button */}
+          {/* Policies Button */}
           <Link href={`/landlords/${landlordId}/policies`}>
             <Button variant="outline">
               <Shield className="mr-2 h-4 w-4" />

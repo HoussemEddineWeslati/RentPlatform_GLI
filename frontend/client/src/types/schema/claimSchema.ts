@@ -20,7 +20,7 @@ export type Claim = z.infer<typeof insertClaimSchema> & {
   tenantName?: string;
 };
 
-// ✅ EXPORT THIS TYPE
+// EXPORT THIS TYPE
 export type ClaimListItem = {
   id: string;
   claimNumber: string;
@@ -30,7 +30,7 @@ export type ClaimListItem = {
   landlordName: string;
 };
 
-// ✅ EXPORT THIS TYPE
+// EXPORT THIS TYPE
 export type ClaimDetail = {
   claim: {
     id: string;
@@ -61,13 +61,13 @@ export type ClaimDetail = {
   };
 };
 
-// ✅ EXPORT THIS TYPE
+// EXPORT THIS TYPE
 export interface ClaimsApiResponse {
   success: boolean;
   data: ClaimListItem[];
 }
 
-// ✅ EXPORT THIS TYPE
+// EXPORT THIS TYPE
 export interface ClaimDetailApiResponse {
   success: boolean;
   data: ClaimDetail;

@@ -6,8 +6,8 @@ import { Shield, Users, Calculator, BarChart3, Check, CheckCircle } from "lucide
 import { Navbar } from "@/components/navbar";
 import { useAuth } from "@/hooks/use-auth";
 
-// ✅ import the background image
-import cityscapeWallpaper from "@assets/generated_images/Dark_cityscape_wallpaper_background_aa84b263.png";
+// import the background image
+import cityscapeWallpaper from "@/assets/cityscape-background.png";
 
 export default function Home() {
   const { isAuthenticated } = useAuth();

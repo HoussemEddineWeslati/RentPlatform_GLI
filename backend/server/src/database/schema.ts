@@ -35,7 +35,7 @@ export const users = pgTable("users", {
   resetPasswordToken: varchar("reset_password_token"),
   resetPasswordExpires: timestamp("reset_password_expires",{ withTimezone: true }),
 
-  // NEW: OTP & Email Verification Fields
+  // OTP & Email Verification Fields
   otpHash: varchar("otp_hash"),
   otpExpires: timestamp("otp_expires",{ withTimezone: true }),
   otpAttempts: integer("otp_attempts").default(0).notNull(),
@@ -121,7 +121,7 @@ export const scoringConfigs = pgTable("scoring_configs", {
 });
 
 /**
- * NEW: Policies table
+ * Policies table
  */
 export const policies = pgTable("policies", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -142,7 +142,7 @@ export const policies = pgTable("policies", {
 });
 
 /**
- * NEW: Claims table
+ * Claims table
  */
 export const claims = pgTable("claims", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

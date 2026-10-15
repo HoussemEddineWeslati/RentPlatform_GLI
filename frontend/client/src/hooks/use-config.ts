@@ -34,7 +34,7 @@ export function useConfig() {
 
   const { data: config, isLoading, error } = useQuery<ApiConfigResponse, Error, ScoringConfig>({
     queryKey,
-    // ✅ FIX: Use the 'select' option to safely extract the nested 'config' object.
+    // Use the 'select' option to safely extract the nested 'config' object.
     // The components will now receive the config data directly, or `undefined` while loading,
     // which is the expected behavior.
     select: (response) => response.config,

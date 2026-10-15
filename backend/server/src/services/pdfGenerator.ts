@@ -168,7 +168,7 @@ function generateRiskFactorsBreakdown(doc: PDFKit.PDFDocument, result: RiskResul
     doc.moveDown();
 
     const tableData = [
-        // ✅ SAFEGUARD: Use `?? 0` to default to 0 if a score is undefined
+        // Use `?? 0` to default to 0 if a score is undefined
         { category: "Personal Information", score: result.components.personal ?? 0, max: 10 },
         { category: "Employment & Income", score: result.components.employment ?? 0, max: 25 },
         { category: "Financial Obligations", score: result.components.financial ?? 0, max: 20 },
@@ -200,7 +200,7 @@ function generateConclusion(doc: PDFKit.PDFDocument, result: RiskResult) {
             ? "Approved, subject to additional checks or a higher premium."
             : "Declined, as the risk profile does not meet our underwriting criteria.";
 
-    // ✅ Force full-width justified paragraph
+    // Force full-width justified paragraph
     doc.text(
         `Based on the risk assessment, the tenant is evaluated with a score of ${result.safetyScore.toFixed(
             0
@@ -215,7 +215,7 @@ function generateConclusion(doc: PDFKit.PDFDocument, result: RiskResult) {
 
     doc.moveDown();
 
-    // ✅ Decision text bold, full width
+    // Decision text bold, full width
     doc.font(FONT_BOLD)
         .fillColor(TEXT_COLOR)
         .text(`The application is ${decisionText}`, 50, doc.y, {

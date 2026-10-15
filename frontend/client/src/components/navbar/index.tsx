@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
-// ✅ IMPORT YOUR LOGO HERE TOO
+// IMPORT YOUR LOGO HERE TOO
 import shieldLogo from "@/assets/logo/shield-logo.png";
 
 export function Navbar() {
@@ -86,7 +86,7 @@ export function Navbar() {
               href="/"
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
-              {/* ✅ REPLACE THE SHIELD ICON WITH YOUR PNG HERE */}
+              {/* REPLACE THE SHIELD ICON WITH YOUR PNG HERE */}
               <img 
                 src={shieldLogo} 
                 alt="GLI Pro Logo" 

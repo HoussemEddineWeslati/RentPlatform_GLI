@@ -55,7 +55,7 @@ export const riskRequestSchema = z.object({
 
 
 /**
- * NEW: Schema for generating the full PDF report.
+ * Schema for generating the full PDF report.
  * Extends the base risk schema with additional details needed for the document.
  */
 export const riskReportRequestSchema = riskRequestSchema.extend({

@@ -37,7 +37,7 @@
 //   const mailOptions = {
 //     from: fromEmail,
 //     to,
-//     subject: `✅ Your Account is Verified`,
+//     subject: `Your Account is Verified`,
 //     html: `<p>Welcome to ${appName}! Your email address has been successfully verified.</p>`,
 //   };
 //   await transporter.sendMail(mailOptions);

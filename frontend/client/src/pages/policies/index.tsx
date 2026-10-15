@@ -111,7 +111,7 @@ export default function PoliciesPage() {
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyListItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // ✅ Fixed: Properly typed query for full policy details
+  // Fixed: Properly typed query for full policy details
   const { data: fullPolicyResponse } = useQuery<PolicyDetailApiResponse>({
     queryKey: ["/api/policies", selectedPolicy?.id],
     enabled: !!selectedPolicy?.id && isFormOpen,
@@ -143,12 +143,12 @@ export default function PoliciesPage() {
     return null;
   }, [fullPolicyResponse]);
 
-  // ✅ Fixed: Properly typed query for policies list
+  // Fixed: Properly typed query for policies list
   const { data: policiesResponse, isLoading } = useQuery<PoliciesApiResponse | PolicyListItem[]>({
     queryKey: ["/api/policies"],
   });
 
-  // ✅ Fixed: Extract policies array from response with proper error handling
+  // Fixed: Extract policies array from response with proper error handling
   const policies = useMemo((): PolicyListItem[] => {
     if (!policiesResponse) return [];
     

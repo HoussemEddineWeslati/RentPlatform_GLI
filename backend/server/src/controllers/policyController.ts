@@ -12,7 +12,7 @@ export const getAllPolicies = async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.session.userId!;
         const policies = await storage.getAllPolicies(userId);
-        // ✅ FIX: Return consistent structure with success flag
+        // Return consistent structure with success flag
         res.json({ success: true, data: policies });
     } catch (err) {
         console.error("Get all policies error:", err);
@@ -50,7 +50,7 @@ export const getPoliciesForLandlord = async (req: AuthRequest, res: Response) =>
         return res.status(404).json({ success: false, message: "Landlord not found or access denied." });
     }
     const policies = await storage.getPoliciesByLandlord(userId, landlordId);
-    // ✅ FIX: Return consistent structure
+    // Return consistent structure
     res.json({ success: true, data: policies });
   } catch (err) {
     console.error("Get policies by landlord error:", err);
@@ -70,7 +70,7 @@ export const getPoliciesForTenant = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ success: false, message: "Tenant not found or access denied." });
         }
         const policies = await storage.getPoliciesByTenant(userId, tenantId);
-        // ✅ FIX: Return consistent structure
+        // Return consistent structure
         res.json({ success: true, data: policies });
     } catch (err) {
         console.error("Get policies by tenant error:", err);
