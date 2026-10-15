@@ -8,3 +8,4 @@ vite.config.ts.*
 # Ignore environment folder
 .env
 .env.*
+!.env.example
